@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vow — The Relationship Operating System</title>
+    <title>Vow - The Relationship Operating System</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,7 +22,7 @@
             --border-color: rgba(255, 255, 255, 0.08);
             --font-heading: 'Outfit', sans-serif;
             --font-body: 'Inter', sans-serif;
-            --transition-speed: 0.6s;
+            --transition-speed: 0.5s;
         }
 
         * {
@@ -108,22 +108,23 @@
             justify-content: center;
         }
 
-        /* Slides styling */
+        /* Slides styling with Flexbox to prevent top/bottom cutoff */
         .slide {
             position: absolute;
             width: 90%;
-            max-width: 1300px;
+            max-width: 1200px;
             height: 85%;
-            max-height: 720px;
+            max-height: 680px;
             opacity: 0;
             pointer-events: none;
             transform: translateX(60px) scale(0.95);
             transition: opacity var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1),
                         transform var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
-            display: grid;
-            grid-template-columns: 1fr;
-            align-content: center;
-            gap: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: stretch;
+            gap: 1.25rem;
             padding: 2.5rem;
             background: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -136,11 +137,14 @@
 
         /* Hide scrollbars for slides */
         .slide::-webkit-scrollbar {
-            display: none;
+            width: 6px;
         }
-        .slide {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+        .slide::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .slide::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
         }
 
         .slide.active {
@@ -153,45 +157,51 @@
             transform: translateX(-60px) scale(0.95);
         }
 
+        /* Centered slide styling */
+        .slide-center {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
         /* Common Slide Layouts */
         .slide-header {
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.25rem;
         }
 
         .slide-title {
             font-family: var(--font-heading);
-            font-size: 2.75rem;
+            font-size: 2.4rem;
             font-weight: 700;
             color: var(--text-color);
             line-height: 1.15;
             letter-spacing: -0.5px;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
             background: linear-gradient(135deg, #fff 40%, var(--text-muted) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .slide-subtitle {
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: var(--text-muted);
-            line-height: 1.6;
-            max-width: 800px;
+            line-height: 1.4;
+            max-width: 850px;
         }
 
         /* Grid layouts */
         .grid-2col {
             display: grid;
             grid-template-columns: 1.1fr 0.9fr;
-            gap: 3rem;
+            gap: 2rem;
             align-items: center;
-            height: 100%;
         }
 
         .grid-3col {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-            margin-top: 1rem;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
         }
 
         /* Typography & Custom classes */
@@ -210,10 +220,13 @@
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 18px;
-            padding: 2rem;
+            padding: 1.5rem;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
         }
 
         .glass-card::before {
@@ -229,7 +242,7 @@
         }
 
         .glass-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-4px);
             background: rgba(255, 255, 255, 0.06);
             border-color: rgba(255, 255, 255, 0.1);
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
@@ -243,13 +256,13 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
             background: rgba(201, 24, 74, 0.15);
             color: var(--primary-color);
-            margin-bottom: 1.5rem;
-            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
         }
 
         .card-icon.gold {
@@ -259,65 +272,65 @@
 
         .card-title {
             font-family: var(--font-heading);
-            font-size: 1.4rem;
+            font-size: 1.25rem;
             font-weight: 600;
-            margin-bottom: 1rem;
+            margin-bottom: 0.6rem;
             color: #fff;
         }
 
         .card-desc {
-            font-size: 0.95rem;
+            font-size: 0.88rem;
             color: var(--text-muted);
-            line-height: 1.6;
+            line-height: 1.45;
         }
 
         /* Heart Lists */
         .heart-list {
             list-style: none;
-            margin-top: 1rem;
+            margin-top: 0.5rem;
         }
 
         .heart-list li {
             position: relative;
-            padding-left: 2rem;
+            padding-left: 1.75rem;
             margin-bottom: 1rem;
-            font-size: 0.95rem;
-            line-height: 1.5;
+            font-size: 0.88rem;
+            line-height: 1.45;
             color: var(--text-muted);
         }
 
         .heart-list li strong {
             color: #fff;
             display: block;
-            margin-bottom: 0.2rem;
+            margin-bottom: 0.15rem;
         }
 
         .heart-list li::before {
             content: '♥';
             position: absolute;
             left: 0;
-            top: 2px;
+            top: 1px;
             color: var(--primary-color);
-            font-size: 1.2rem;
+            font-size: 1rem;
         }
 
         /* Banner styling */
         .bottom-banner {
-            grid-column: 1 / -1;
             background: rgba(201, 24, 74, 0.08);
             border: 1px dashed rgba(201, 24, 74, 0.3);
             border-radius: 16px;
-            padding: 1.25rem;
+            padding: 0.85rem 1.25rem;
             display: flex;
             align-items: center;
             gap: 1rem;
-            font-size: 0.9rem;
-            line-height: 1.5;
+            font-size: 0.82rem;
+            line-height: 1.4;
             color: var(--text-muted);
+            margin-top: auto;
         }
 
         .bottom-banner-icon {
-            font-size: 1.8rem;
+            font-size: 1.4rem;
             color: var(--primary-color);
             flex-shrink: 0;
         }
@@ -339,17 +352,17 @@
 
         .vow-logo-pulse {
             position: relative;
-            width: 120px;
-            height: 120px;
-            margin-bottom: 2rem;
+            width: 100px;
+            height: 100px;
+            margin-bottom: 1.25rem;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         .logo-heart-svg {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             fill: var(--primary-color);
             filter: drop-shadow(0 0 15px var(--primary-glow));
             z-index: 5;
@@ -388,10 +401,10 @@
 
         .vow-brand-title {
             font-family: var(--font-heading);
-            font-size: 5rem;
+            font-size: 4rem;
             font-weight: 800;
             letter-spacing: 3px;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
             text-transform: uppercase;
             background: linear-gradient(135deg, #ffffff 0%, var(--primary-color) 50%, var(--accent-color) 100%);
             -webkit-background-clip: text;
@@ -401,7 +414,7 @@
 
         .vow-tagline {
             font-family: var(--font-heading);
-            font-size: 1.6rem;
+            font-size: 1.3rem;
             font-weight: 500;
             color: var(--text-muted);
             letter-spacing: 1px;
@@ -409,32 +422,32 @@
         }
 
         .vow-pitch-text {
-            margin-top: 2rem;
-            font-size: 1.05rem;
+            margin-top: 1.25rem;
+            font-size: 0.95rem;
             color: var(--text-muted);
             max-width: 600px;
             text-align: center;
-            line-height: 1.7;
+            line-height: 1.5;
         }
 
         /* Slide 2 problem quote */
         .problem-quote {
-            grid-column: 1 / -1;
             border-left: 4px solid var(--primary-color);
             background: rgba(255,255,255,0.02);
-            padding: 1.2rem 2rem;
-            border-radius: 0 16px 16px 0;
-            font-size: 1.1rem;
+            padding: 0.85rem 1.25rem;
+            border-radius: 0 12px 12px 0;
+            font-size: 0.95rem;
             font-style: italic;
             color: var(--text-muted);
-            margin-top: 1rem;
+            margin-top: 0.25rem;
         }
 
         /* Slide 3 Sunset Visual & Mockups */
         .sunset-visual {
             width: 100%;
             height: 100%;
-            max-height: 420px;
+            min-height: 300px;
+            max-height: 360px;
             border-radius: 20px;
             background: linear-gradient(180deg, #2b0f4a 0%, #150624 100%);
             border: 1px solid rgba(255,255,255,0.05);
@@ -467,19 +480,19 @@
 
         .neon-sun {
             position: absolute;
-            width: 220px;
-            height: 220px;
+            width: 160px;
+            height: 160px;
             border-radius: 50%;
             background: linear-gradient(to bottom, #ff007f 0%, #ffbf00 100%);
             bottom: 25%;
-            filter: blur(1px) drop-shadow(0 0 30px rgba(255, 0, 127, 0.6));
-            box-shadow: 0 0 50px rgba(255, 191, 0, 0.3);
+            filter: blur(1px) drop-shadow(0 0 25px rgba(255, 0, 127, 0.5));
+            box-shadow: 0 0 40px rgba(255, 191, 0, 0.25);
         }
 
         .neon-sun-overlay {
             position: absolute;
-            width: 220px;
-            height: 220px;
+            width: 160px;
+            height: 160px;
             bottom: 25%;
             background: repeating-linear-gradient(
                 transparent,
@@ -502,7 +515,7 @@
         }
 
         .building {
-            width: 25px;
+            width: 20px;
             background: #11041f;
             border-top: 1px solid rgba(201, 24, 74, 0.3);
             border-left: 1px solid rgba(201, 24, 74, 0.2);
@@ -510,13 +523,13 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.8);
         }
 
-        .b1 { height: 70px; width: 35px; }
-        .b2 { height: 110px; width: 40px; }
-        .b3 { height: 140px; width: 30px; }
-        .b4 { height: 95px; width: 45px; }
-        .b5 { height: 160px; width: 35px; }
-        .b6 { height: 120px; width: 38px; }
-        .b7 { height: 80px; width: 32px; }
+        .b1 { height: 50px; width: 26px; }
+        .b2 { height: 80px; width: 30px; }
+        .b3 { height: 105px; width: 22px; }
+        .b4 { height: 70px; width: 35px; }
+        .b5 { height: 125px; width: 26px; }
+        .b6 { height: 90px; width: 28px; }
+        .b7 { height: 60px; width: 24px; }
 
         /* Interactive Phone Mockup for Slide 4 */
         .mockup-wrapper {
@@ -528,13 +541,13 @@
         }
 
         .phone-mockup {
-            width: 290px;
-            height: 540px;
+            width: 240px;
+            height: 440px;
             background: #09030e;
-            border: 10px solid #2e1d3e;
-            border-radius: 40px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 
-                        0 0 20px rgba(201, 24, 74, 0.2),
+            border: 8px solid #2e1d3e;
+            border-radius: 34px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7), 
+                        0 0 15px rgba(201, 24, 74, 0.15),
                         inset 0 0 10px rgba(255,255,255,0.05);
             position: relative;
             overflow: hidden;
@@ -548,37 +561,37 @@
         }
 
         .phone-speaker {
-            width: 60px;
+            width: 50px;
             height: 4px;
             background: #2e1d3e;
             border-radius: 2px;
             position: absolute;
-            top: 8px;
+            top: 6px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 100;
         }
 
         .phone-camera {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             background: #11091b;
             border-radius: 50%;
             position: absolute;
-            top: 6px;
-            left: calc(50% + 40px);
+            top: 5px;
+            left: calc(50% + 34px);
             z-index: 100;
         }
 
         .phone-screen {
             flex: 1;
-            margin-top: 15px;
+            margin-top: 12px;
             background: #140822;
             position: relative;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            padding: 1rem 0.75rem;
+            padding: 0.6rem;
         }
 
         /* Screen States styling */
@@ -603,15 +616,15 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid rgba(255,255,255,0.06);
-            padding-bottom: 0.5rem;
-            margin-bottom: 0.75rem;
+            padding-bottom: 0.4rem;
+            margin-bottom: 0.5rem;
         }
 
         .phone-logo {
             font-family: var(--font-heading);
             font-weight: 700;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
             color: #fff;
             display: flex;
             align-items: center;
@@ -619,16 +632,16 @@
         }
 
         .phone-logo-dot {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
             background: var(--primary-color);
             border-radius: 50%;
         }
 
         .phone-status-pill {
-            font-size: 0.65rem;
-            padding: 2px 8px;
-            border-radius: 10px;
+            font-size: 0.55rem;
+            padding: 1px 5px;
+            border-radius: 8px;
             font-weight: 500;
             text-transform: uppercase;
         }
@@ -649,40 +662,40 @@
         .dating-resume-card {
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 0.75rem;
-            margin-bottom: 0.75rem;
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.35rem;
         }
 
         .resume-user {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .user-avatar {
-            width: 32px;
-            height: 32px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
         }
 
         .user-info-name {
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             font-weight: 600;
             color: #fff;
         }
 
         .user-info-title {
-            font-size: 0.6rem;
+            font-size: 0.5rem;
             color: var(--text-muted);
         }
 
@@ -691,8 +704,8 @@
             color: var(--accent-color);
             border: 1px solid rgba(249, 199, 79, 0.2);
             border-radius: 4px;
-            font-size: 0.55rem;
-            padding: 1px 4px;
+            font-size: 0.45rem;
+            padding: 1px 3px;
             display: inline-flex;
             align-items: center;
             gap: 2px;
@@ -706,14 +719,14 @@
         }
 
         .stat-label {
-            font-size: 0.6rem;
+            font-size: 0.5rem;
             color: var(--text-muted);
             display: flex;
             justify-content: space-between;
         }
 
         .stat-progress-bg {
-            height: 4px;
+            height: 3px;
             background: rgba(255,255,255,0.1);
             border-radius: 2px;
             width: 100%;
@@ -730,17 +743,17 @@
             margin-top: auto;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 5px;
         }
 
         .propose-btn {
             background: var(--primary-color);
             color: #fff;
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             font-weight: 600;
-            padding: 8px;
+            padding: 5px;
             border: none;
-            border-radius: 8px;
+            border-radius: 5px;
             cursor: pointer;
             text-align: center;
             box-shadow: 0 4px 10px rgba(201, 24, 74, 0.3);
@@ -754,12 +767,12 @@
         .proposal-item {
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 8px;
-            padding: 6px 10px;
+            border-radius: 5px;
+            padding: 4px 6px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 0.65rem;
+            font-size: 0.55rem;
         }
 
         .proposal-item span {
@@ -777,13 +790,13 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 0.5rem;
-            margin-bottom: 0.75rem;
+            padding: 0.2rem;
+            margin-bottom: 0.4rem;
         }
 
         .dial-svg {
-            width: 100px;
-            height: 100px;
+            width: 70px;
+            height: 70px;
             transform: rotate(-90deg);
         }
 
@@ -806,46 +819,46 @@
         .harmony-val {
             position: absolute;
             font-family: var(--font-heading);
-            font-size: 1.4rem;
+            font-size: 1.15rem;
             font-weight: 700;
             color: #fff;
-            margin-top: -12px;
+            margin-top: -8px;
         }
 
         .harmony-label {
-            font-size: 0.6rem;
+            font-size: 0.5rem;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-top: 4px;
+            margin-top: 1px;
         }
 
         .couple-checkin {
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 0.75rem;
-            margin-bottom: 0.75rem;
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
         }
 
         .checkin-title {
-            font-size: 0.7rem;
+            font-size: 0.6rem;
             font-weight: 600;
             color: #fff;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.25rem;
         }
 
         .checkin-desc {
-            font-size: 0.6rem;
+            font-size: 0.5rem;
             color: var(--text-muted);
-            margin-bottom: 0.6rem;
-            line-height: 1.4;
+            margin-bottom: 0.4rem;
+            line-height: 1.25;
         }
 
         .checkin-options {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 4px;
+            gap: 3px;
         }
 
         .rating-dot {
@@ -856,7 +869,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.6rem;
+            font-size: 0.5rem;
             color: var(--text-muted);
             cursor: pointer;
             transition: all 0.2s;
@@ -871,22 +884,22 @@
         .couple-goals {
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 10px;
-            padding: 0.6rem;
+            border-radius: 6px;
+            padding: 0.4rem;
             margin-top: auto;
         }
 
         .goal-item {
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-size: 0.65rem;
-            margin-bottom: 0.4rem;
+            gap: 4px;
+            font-size: 0.55rem;
+            margin-bottom: 0.25rem;
         }
 
         .goal-checkbox {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border: 1px solid var(--accent-color);
             border-radius: 2px;
             display: inline-block;
@@ -901,9 +914,9 @@
             content: '✓';
             position: absolute;
             color: #000;
-            font-size: 7px;
-            top: -2px;
-            left: 1px;
+            font-size: 5px;
+            top: -4px;
+            left: 0px;
             font-weight: bold;
         }
 
@@ -914,18 +927,18 @@
         /* Mockup control toggle */
         .mockup-controls {
             display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
         }
 
         .toggle-btn {
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.08);
             color: var(--text-muted);
-            padding: 8px 16px;
-            font-size: 0.85rem;
+            padding: 5px 10px;
+            font-size: 0.75rem;
             font-weight: 500;
-            border-radius: 20px;
+            border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s;
         }
@@ -934,14 +947,14 @@
             background: var(--primary-color);
             color: #fff;
             border-color: var(--primary-color);
-            box-shadow: 0 4px 12px var(--primary-glow);
+            box-shadow: 0 4px 8px var(--primary-glow);
         }
 
         .toggle-btn.active.gold-btn {
             background: var(--accent-color);
             color: #10051e;
             border-color: var(--accent-color);
-            box-shadow: 0 4px 12px var(--accent-glow);
+            box-shadow: 0 4px 8px var(--accent-glow);
             font-weight: 600;
         }
 
@@ -956,146 +969,32 @@
 
         .market-number {
             font-family: var(--font-heading);
-            font-size: 10rem;
+            font-size: 7.5rem;
             font-weight: 800;
             color: var(--primary-color);
             line-height: 0.8;
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
         }
 
         .market-label {
             font-family: var(--font-heading);
-            font-size: 1.8rem;
+            font-size: 1.4rem;
             font-weight: 600;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             color: var(--text-color);
             text-transform: uppercase;
-            margin-top: 1rem;
+            margin-top: 0.5rem;
         }
 
-        /* Slide 6 Pricing cards */
-        .pricing-grid {
+        /* Slide 6 pricing card layout changes (now monetization channels) */
+        .monetization-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin-top: 1rem;
-        }
-
-        .pricing-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 20px;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-
-        .pricing-card.popular {
-            background: rgba(201, 24, 74, 0.04);
-            border: 1px solid rgba(201, 24, 74, 0.25);
-            transform: scale(1.03);
-        }
-
-        .pricing-card.popular::after {
-            content: 'RECOMMENDED';
-            position: absolute;
-            top: -12px;
-            background: var(--primary-color);
-            color: #fff;
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            padding: 4px 12px;
-            border-radius: 12px;
-        }
-
-        .pricing-card:hover {
-            transform: translateY(-8px);
-            border-color: rgba(255,255,255,0.1);
-            background: rgba(255, 255, 255, 0.04);
-        }
-
-        .pricing-card.popular:hover {
-            transform: translateY(-8px) scale(1.03);
-            border-color: rgba(201, 24, 74, 0.4);
-            background: rgba(201, 24, 74, 0.07);
-        }
-
-        .price-tier {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-        }
-
-        .price-value {
-            font-family: var(--font-heading);
-            font-size: 2.75rem;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 0.25rem;
-        }
-
-        .price-period {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 1.5rem;
-        }
-
-        .price-features {
-            list-style: none;
-            width: 100%;
-            text-align: left;
-            margin-bottom: 1rem;
-        }
-
-        .price-features li {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 0.75rem;
-            padding-left: 1.25rem;
-            position: relative;
-        }
-
-        .price-features li::before {
-            content: '✓';
-            position: absolute;
-            left: 0;
-            color: var(--primary-color);
-            font-weight: bold;
-        }
-
-        .pricing-card.popular .price-features li::before {
-            color: var(--accent-color);
-        }
-
-        /* Slide 7 Tech widgets */
-        .tech-diagram-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-        }
-
-        .db-schema-widget {
-            background: rgba(0, 0, 0, 0.25);
-            border: 1px dashed rgba(255,255,255,0.08);
-            border-radius: 16px;
-            padding: 1.5rem;
-            font-family: monospace;
-            font-size: 0.75rem;
-            color: #a5f3fc;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-            line-height: 1.5;
+            gap: 1.25rem;
+            margin-top: 0.5rem;
         }
 
         /* Slide 8 network effects loop diagram */
@@ -1107,13 +1006,13 @@
         }
 
         .flywheel-svg {
-            width: 320px;
-            height: 320px;
+            width: 230px;
+            height: 230px;
         }
 
         .flywheel-text {
             font-family: var(--font-heading);
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             fill: #fff;
             text-anchor: middle;
             font-weight: 500;
@@ -1121,7 +1020,7 @@
 
         .flywheel-title-text {
             font-family: var(--font-heading);
-            font-size: 1.1rem;
+            font-size: 1rem;
             fill: var(--accent-color);
             text-anchor: middle;
             font-weight: bold;
@@ -1139,163 +1038,94 @@
             to { stroke-dashoffset: -100; }
         }
 
-        /* Slide 9 Roadmap Timeline */
-        .timeline-container {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            padding: 1rem 0;
-            position: relative;
+        /* Founder Team slide stylings */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-top: 0.5rem;
         }
 
-        .timeline-line {
-            position: absolute;
-            height: 2px;
-            background: linear-gradient(90deg, var(--primary-color) 0%, var(--accent-color) 100%);
-            width: 80%;
-            left: 10%;
-            top: 60px;
-            z-index: 1;
-        }
-
-        .timeline-nodes {
+        .founder-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 1.75rem;
             display: flex;
-            justify-content: space-between;
-            width: 100%;
-            position: relative;
-            z-index: 5;
-        }
-
-        .timeline-node {
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            width: 30%;
+            gap: 1.5rem;
+            transition: all 0.3s ease;
         }
 
-        .node-bubble {
-            width: 48px;
-            height: 48px;
+        .founder-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .founder-avatar-frame {
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
-            background: #110522;
-            border: 3px solid var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            padding: 4px;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: var(--font-heading);
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: #fff;
-            box-shadow: 0 0 15px var(--primary-glow);
-            margin-bottom: 1.5rem;
-            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(201, 24, 74, 0.3);
+            overflow: hidden;
         }
 
-        .timeline-node:nth-child(2) .node-bubble {
-            border-color: #e35a7f;
-            box-shadow: 0 0 15px rgba(227, 90, 127, 0.4);
-        }
-
-        .timeline-node:nth-child(3) .node-bubble {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 15px var(--accent-glow);
-        }
-
-        .timeline-node:hover .node-bubble {
-            transform: scale(1.15);
-        }
-
-        .node-phase {
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-        }
-
-        .timeline-node:nth-child(2) .node-phase {
-            color: #e35a7f;
-        }
-        .timeline-node:nth-child(3) .node-phase {
-            color: var(--accent-color);
-        }
-
-        .node-title {
-            font-family: var(--font-heading);
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #fff;
-            margin-bottom: 0.5rem;
-        }
-
-        .node-desc {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            text-align: center;
-            line-height: 1.5;
-            padding: 0 1rem;
-        }
-
-        /* Slide 10 collage layout */
-        .collage-container {
-            position: relative;
+        .founder-photo {
             width: 100%;
             height: 100%;
-            max-height: 380px;
-            border-radius: 20px;
-            overflow: hidden;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #110522;
+        }
+
+        .founder-avatar-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #110522;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid var(--border-color);
-            background: linear-gradient(135deg, rgba(201, 24, 74, 0.1) 0%, rgba(249, 199, 79, 0.05) 100%);
-        }
-
-        .collage-svg {
-            width: 90%;
-            height: 90%;
-        }
-
-        /* Table styles for slide 11 */
-        .source-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-            font-size: 0.85rem;
-            text-align: left;
-        }
-
-        .source-table th, .source-table td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .source-table th {
             font-family: var(--font-heading);
-            font-weight: 600;
-            color: #fff;
-            background: rgba(255,255,255,0.02);
-        }
-
-        .source-table td {
-            color: var(--text-muted);
-        }
-
-        .source-table tr:hover td {
+            font-weight: 700;
+            font-size: 2.75rem;
             color: #fff;
         }
 
-        .source-link {
-            color: var(--primary-color);
-            text-decoration: none;
-            transition: color 0.2s;
-            word-break: break-all;
+        .founder-meta-info {
+            display: flex;
+            flex-direction: column;
         }
 
-        .source-link:hover {
+        .founder-name {
+            font-family: var(--font-heading);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.15rem;
+        }
+
+        .founder-role {
+            font-size: 0.85rem;
             color: var(--accent-color);
-            text-decoration: underline;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Slide 10: Milestones Timeline stylings */
+        .milestones-timeline-svg {
+            width: 100%;
+            height: 60px;
+            margin-top: 1rem;
         }
 
         /* Footer & navigation controls */
@@ -1426,27 +1256,21 @@
             .grid-2col {
                 grid-template-columns: 1fr;
                 gap: 1.5rem;
-                overflow-y: auto;
             }
             .sunset-visual, .mockup-wrapper {
-                height: 280px;
+                height: 240px;
+                min-height: auto;
             }
             .slide {
                 padding: 1.5rem;
                 height: 90%;
             }
             .slide-title {
-                font-size: 2rem;
+                font-size: 1.8rem;
             }
-            .grid-3col, .pricing-grid {
+            .grid-3col, .monetization-grid, .team-grid {
                 grid-template-columns: 1fr;
                 gap: 1rem;
-            }
-            .pricing-card.popular {
-                transform: none;
-            }
-            .pricing-card.popular:hover {
-                transform: translateY(-5px);
             }
         }
     </style>
@@ -1464,7 +1288,7 @@
     <main class="presentation-container">
 
         <!-- SLIDE 1: Title & Hook -->
-        <section class="slide active" id="slide-1" data-section="SEED-STAGE PITCH • 2026">
+        <section class="slide active slide-center" id="slide-1" data-section="SEED-STAGE PITCH - 2026">
             <div class="logo-container">
                 <div class="vow-logo-pulse">
                     <div class="pulse-ring"></div>
@@ -1477,13 +1301,13 @@
                 <h1 class="vow-brand-title">VOW</h1>
                 <div class="vow-tagline">The Relationship Operating System</div>
                 <p class="vow-pitch-text">
-                    A single, trusted platform that carries people from a verified single life into a thriving, well-tended relationship — and keeps them there.
+                    A single, trusted platform that carries people from a verified single life into a thriving, well-tended relationship - and keeps them there.
                 </p>
             </div>
         </section>
 
         <!-- SLIDE 2: The Problem -->
-        <section class="slide" id="slide-2" data-section="THE PROBLEM • SLIDE 2">
+        <section class="slide" id="slide-2" data-section="THE PROBLEM - SLIDE 2">
             <div class="slide-header">
                 <h2 class="slide-title">Modern Dating Is Broken</h2>
                 <p class="slide-subtitle">Dating applications are built to keep you swiping, not to keep you together.</p>
@@ -1497,21 +1321,21 @@
                 <div class="glass-card">
                     <div class="card-icon">🕵️</div>
                     <h3 class="card-title">The Anonymity Trap</h3>
-                    <p class="card-desc">There is no verification layer for a user's true relationship history, current status, or genuine intentions — so bad-faith actors move freely and trust erodes.</p>
+                    <p class="card-desc">There is no verification layer for a user's true relationship history, current status, or genuine intentions - so bad-faith actors move freely and trust erodes.</p>
                 </div>
                 <div class="glass-card">
                     <div class="card-icon">💔</div>
                     <h3 class="card-title">The Retention Problem</h3>
-                    <p class="card-desc">Every dating app's best possible outcome — a happy couple — is also the moment it loses both users for good, with no product built for what happens next.</p>
+                    <p class="card-desc">Every dating app's best possible outcome - a happy couple - is also the moment it loses both users for good, with no product built for what happens next.</p>
                 </div>
-                <div class="problem-quote">
-                    "People are tired of superficial games. They want transparency and accountability in their love life."
-                </div>
+            </div>
+            <div class="problem-quote">
+                "People are tired of superficial games. They want transparency and accountability in their love life."
             </div>
         </section>
 
         <!-- SLIDE 3: The Solution -->
-        <section class="slide" id="slide-3" data-section="THE SOLUTION • SLIDE 3">
+        <section class="slide" id="slide-3" data-section="THE SOLUTION - SLIDE 3">
             <div class="grid-2col">
                 <div>
                     <div class="slide-header">
@@ -1520,8 +1344,8 @@
                     </div>
                     <ul class="heart-list">
                         <li>
-                            <strong>The Dating Resume</strong>
-                            A verified single profile built on real signal — relationship history, intentions, and confirmed status — replacing guesswork with data-driven insight.
+                            <strong>Vow Platform History</strong>
+                            Authenticity guaranteed via facial liveness verification. New users start fresh, but past relationships formed and ended on Vow generate verified data-driven insights over time.
                         </li>
                         <li>
                             <strong>The Commitment Lock</strong>
@@ -1529,7 +1353,7 @@
                         </li>
                         <li>
                             <strong>The Relationship Pulse</strong>
-                            A private, gamified fitness tracker for the heart — daily check-ins and a shared harmony score that help couples stay close, together.
+                            A private, gamified fitness tracker for the heart - daily check-ins and a shared harmony score that help couples stay close, together.
                         </li>
                     </ul>
                 </div>
@@ -1551,21 +1375,21 @@
         </section>
 
         <!-- SLIDE 4: Product & App Modes -->
-        <section class="slide" id="slide-4" data-section="THE PRODUCT • SLIDE 4">
+        <section class="slide" id="slide-4" data-section="THE PRODUCT - SLIDE 4">
             <div class="grid-2col">
                 <div>
                     <div class="slide-header">
                         <h2 class="slide-title">One App, Two Powerful Modes</h2>
-                        <p class="slide-subtitle">The interface itself carries a user's status. Nothing about the app feels the same before and after commitment — because the job it's doing has changed.</p>
+                        <p class="slide-subtitle">The interface itself carries a user's status. Nothing about the app feels the same before and after commitment - because the job it's doing has changed.</p>
                     </div>
                     
-                    <div style="display: flex; flex-direction: column; gap: 1rem;">
-                        <div class="glass-card" id="btn-single-desc" style="cursor: pointer; border-left: 3px solid var(--primary-color);">
-                            <h4 class="highlight-text" style="font-family: var(--font-heading); font-size: 1.15rem; margin-bottom: 0.3rem;">🛡️ Single Mode</h4>
-                            <p class="card-desc" style="font-size: 0.85rem;">Tinder-style swipe, powered by verified data resumes instead of photos alone. "Verification Unlock" reveals deeper history the moment two people match, ending in a formal "Propose Relationship" button.</p>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div class="glass-card" id="btn-single-desc" style="cursor: pointer; border-left: 3px solid var(--primary-color); padding: 1.25rem 1.5rem;">
+                            <h4 class="highlight-text" style="font-family: var(--font-heading); font-size: 1.1rem; margin-bottom: 0.2rem;">🛡️ Single Mode</h4>
+                            <p class="card-desc" style="font-size: 0.85rem;">Traditional swipe mechanics, enhanced by facial liveness and in-app relationship history. "Verification Unlock" reveals past Vow metrics when two people match, ending in a formal "Propose Relationship" button.</p>
                         </div>
-                        <div class="glass-card" id="btn-couple-desc" style="cursor: pointer; opacity: 0.6;">
-                            <h4 class="accent-text" style="font-family: var(--font-heading); font-size: 1.15rem; margin-bottom: 0.3rem;">🤝 Couples Mode</h4>
+                        <div class="glass-card" id="btn-couple-desc" style="cursor: pointer; opacity: 0.6; padding: 1.25rem 1.5rem;">
+                            <h4 class="accent-text" style="font-family: var(--font-heading); font-size: 1.1rem; margin-bottom: 0.2rem;">🤝 Couples Mode</h4>
                             <p class="card-desc" style="font-size: 0.85rem;">A central shared dashboard the couple owns together. Features private, double-blind daily mood logs that build an honest picture over time, plus collaborative future-mapping.</p>
                         </div>
                     </div>
@@ -1598,14 +1422,14 @@
                                             <div class="user-info-title">Software Engineer</div>
                                         </div>
                                     </div>
-                                    <span class="verified-badge">✓ Verified Single Profile</span>
+                                    <span class="verified-badge">✓ Liveness Verified User</span>
                                     
                                     <div class="stat-bar" style="margin-top: 4px;">
                                         <div class="stat-label"><span>Avg. Relationship Length</span> <span>1.8 Years</span></div>
                                         <div class="stat-progress-bg"><div class="stat-progress-fill" style="width: 70%;"></div></div>
                                     </div>
                                     <div class="stat-bar">
-                                        <div class="stat-label"><span>Vouch Rating</span> <span>96%</span></div>
+                                        <div class="stat-label"><span>Vow Trust Score</span> <span>96%</span></div>
                                         <div class="stat-progress-bg"><div class="stat-progress-fill" style="background: var(--accent-color); width: 96%;"></div></div>
                                     </div>
                                 </div>
@@ -1676,7 +1500,7 @@
         </section>
 
         <!-- SLIDE 5: Market Opportunity -->
-        <section class="slide" id="slide-5" data-section="MARKET OPPORTUNITY • SLIDE 5">
+        <section class="slide" id="slide-5" data-section="MARKET OPPORTUNITY - SLIDE 5">
             <div class="grid-2col">
                 <div class="market-viz">
                     <div class="market-number">2</div>
@@ -1688,117 +1512,81 @@
                         <p class="slide-subtitle">We don't just capture users before they find someone; we stay with them after they match.</p>
                     </div>
                     
-                    <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem;">
+                    <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1rem;">
                         <div>
-                            <h4 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 0.3rem;"><span class="highlight-text">0</span> Direct Competitors</h4>
+                            <h4 style="font-family: var(--font-heading); font-size: 1.2rem; margin-bottom: 0.25rem;"><span class="highlight-text">0</span> Direct Competitors</h4>
                             <p class="card-desc">No other dual-mode operating system captures the full relationship pipeline from singles matching to daily couple's tracking.</p>
                         </div>
                         <div>
-                            <h4 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 0.3rem;"><span class="accent-text">100%</span> Need "Next Step"</h4>
+                            <h4 style="font-family: var(--font-heading); font-size: 1.2rem; margin-bottom: 0.25rem;"><span class="accent-text">100%</span> Need "Next Step"</h4>
                             <p class="card-desc">Couples don't just find love; they must keep and maintain it. Standard apps abandon them. VOW captures them on day one of commitment.</p>
                         </div>
                     </div>
-                    <div class="problem-quote" style="margin-top: 2rem;">
-                        <strong>The Trend:</strong> Singles are already building organic "dating resumes" manually in tools like Notion and Google Slides and posting them publicly. VOW is here to formalize what the market is already doing by hand.
+                    <div class="problem-quote" style="margin-top: 1rem;">
+                        <strong>The Trend:</strong> Singles are tired of starting over on dating apps with zero context. VOW solves this by building a persistent, verified platform history that carries forward as you date, match, and grow.
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- SLIDE 6: Pricing / Business Model -->
-        <section class="slide" id="slide-6" data-section="BUSINESS MODEL • SLIDE 6">
+        <!-- SLIDE 6: Monetization Model (pricing tiers removed/simplified as requested) -->
+        <section class="slide" id="slide-6" data-section="MONETIZATION MODEL - SLIDE 6">
             <div class="slide-header">
-                <h2 class="slide-title">Pricing for Everyday People</h2>
-                <p class="slide-subtitle">Scalable tiers designed to match the user's current stage of love.</p>
+                <h2 class="slide-title">Monetization Model</h2>
+                <p class="slide-subtitle">High-margin revenue streams aligned with key milestones in the user's relationship lifecycle.</p>
             </div>
-            <div class="pricing-grid">
-                <div class="pricing-card">
-                    <div class="price-tier">FREE</div>
-                    <div class="price-value">$0</div>
-                    <div class="price-period">forever</div>
-                    <ul class="price-features">
-                        <li>Build your Dating Resume</li>
-                        <li>Standard swipe & matching</li>
-                        <li>Basic Couples dashboard</li>
-                    </ul>
+            <div class="monetization-grid">
+                <div class="glass-card">
+                    <div class="card-icon">🛡️</div>
+                    <h3 class="card-title">Single Mode Subs</h3>
+                    <p class="card-desc">Premium subscription unlocking advanced data vetting filters, priority resume searches, profile analytics, and the premium verification trust badge.</p>
                 </div>
-                <div class="pricing-card popular">
-                    <div class="price-tier" style="color: var(--accent-color);">VOW PLUS</div>
-                    <div class="price-value">$7.99</div>
-                    <div class="price-period">/ month (singles)</div>
-                    <ul class="price-features">
-                        <li>See who viewed your resume</li>
-                        <li>Deep historical data filters</li>
-                        <li>Premium verified badge</li>
-                        <li>Boosted search visibility</li>
-                    </ul>
+                <div class="glass-card">
+                    <div class="card-icon">🤝</div>
+                    <h3 class="card-title">Couples Mode Subs</h3>
+                    <p class="card-desc">Dual-user subscription providing a secure shared memory vault, advanced communication metrics, customized daily logs, and analytics.</p>
                 </div>
-                <div class="pricing-card">
-                    <div class="price-tier">VOW TOGETHER</div>
-                    <div class="price-value">$12.99</div>
-                    <div class="price-period">/ month (per couple)</div>
-                    <ul class="price-features">
-                        <li>One partner pays, both unlock</li>
-                        <li>Full analytics & score archive</li>
-                        <li>Shared communication tools</li>
-                        <li>Date night discounts</li>
-                    </ul>
+                <div class="glass-card">
+                    <div class="card-icon">🏪</div>
+                    <h3 class="card-title">Date Night B2B</h3>
+                    <p class="card-desc">Commission-based transactional revenue generated from direct bookings of restaurants, spas, and romantic getaways recommended based on score wellness logs.</p>
                 </div>
             </div>
             <div class="bottom-banner">
-                <span class="bottom-banner-icon">🏪</span>
+                <span class="bottom-banner-icon">📈</span>
                 <div>
-                    <strong>B2B Date Night Marketplace:</strong> We generate high-margin ecosystem revenue by proactively recommending and booking verified dining reservations, getaway packages, or spa visits customized to lift a couple's harmony scores.
+                    <strong>Scalable Growth:</strong> Aligning revenue streams directly with user goals ensures stable recurring subscriptions combined with high-margin marketplace transaction flows.
                 </div>
             </div>
         </section>
 
         <!-- SLIDE 7: Technology & Architecture -->
-        <section class="slide" id="slide-7" data-section="TECHNOLOGY ARCHITECTURE • SLIDE 7">
-            <div class="grid-2col">
-                <div>
-                    <div class="slide-header">
-                        <h2 class="slide-title">Built for Privacy & Scale</h2>
-                        <p class="slide-subtitle">Trust is the entire product. Every architectural decision is made to protect the two things people hand us: their history, and their honesty.</p>
-                    </div>
-                    <ul class="heart-list">
-                        <li>
-                            <strong>State-Driven Backend</strong>
-                            A relational PostgreSQL core cleanly models each user's conditional state — Single or Coupled — so the product logic and the data model never drift apart.
-                        </li>
-                        <li>
-                            <strong>Airtight Privacy</strong>
-                            Strict data siloing keeps sensitive material — relationship history, private couple logs — encrypted at rest and controlled entirely by the people it belongs to.
-                        </li>
-                        <li>
-                            <strong>Double-Blind Scoring</strong>
-                            Daily relationship ratings stay sealed until both partners have submitted theirs, so no one can see a partner's score first and react to it instead of answering honestly.
-                        </li>
-                    </ul>
+        <section class="slide" id="slide-7" data-section="TECHNOLOGY ARCHITECTURE - SLIDE 7">
+            <div class="slide-header">
+                <h2 class="slide-title">Built for Privacy & Scale</h2>
+                <p class="slide-subtitle">Trust is the entire product. Every architectural decision is made to protect the two things people hand us: their history, and their honesty.</p>
+            </div>
+            <div class="grid-3col">
+                <div class="glass-card">
+                    <div class="card-icon">🗄️</div>
+                    <h3 class="card-title">State-Driven Backend</h3>
+                    <p class="card-desc">A relational PostgreSQL core cleanly models each user's conditional state - Single or Coupled - so the product logic and the data model never drift apart.</p>
                 </div>
-                <div class="tech-diagram-container">
-                    <div class="db-schema-widget">
-                        -- Vow Database Schema<br>
-                        CREATE TABLE users (<br>
-                        &nbsp;&nbsp;id UUID PRIMARY KEY,<br>
-                        &nbsp;&nbsp;email VARCHAR(255) UNIQUE,<br>
-                        &nbsp;&nbsp;status VARCHAR(20) CHECK (status IN ('single', 'coupled')),<br>
-                        &nbsp;&nbsp;vouch_rating INTEGER DEFAULT 100<br>
-                        );<br><br>
-                        CREATE TABLE relationships (<br>
-                        &nbsp;&nbsp;id UUID PRIMARY KEY,<br>
-                        &nbsp;&nbsp;user_1_id UUID REFERENCES users(id),<br>
-                        &nbsp;&nbsp;user_2_id UUID REFERENCES users(id),<br>
-                        &nbsp;&nbsp;created_at TIMESTAMP DEFAULT NOW(),<br>
-                        &nbsp;&nbsp;harmony_score NUMERIC(5,2)<br>
-                        );
-                    </div>
+                <div class="glass-card">
+                    <div class="card-icon">🔒</div>
+                    <h3 class="card-title">Airtight Privacy</h3>
+                    <p class="card-desc">Strict data siloing keeps sensitive material - relationship history, private couple logs - encrypted at rest and controlled entirely by the people it belongs to.</p>
+                </div>
+                <div class="glass-card">
+                    <div class="card-icon">👁️‍🗨️</div>
+                    <h3 class="card-title">Double-Blind Scoring</h3>
+                    <p class="card-desc">Daily relationship ratings stay sealed until both partners have submitted theirs, so no one can see a partner's score first and react to it instead of answering honestly.</p>
                 </div>
             </div>
         </section>
 
         <!-- SLIDE 8: Network Effects -->
-        <section class="slide" id="slide-8" data-section="NETWORK EFFECTS • SLIDE 8">
+        <section class="slide" id="slide-8" data-section="NETWORK EFFECTS - SLIDE 8">
             <div class="grid-2col">
                 <div class="flywheel-container">
                     <svg class="flywheel-svg" viewBox="0 0 200 200">
@@ -1838,137 +1626,126 @@
                         <h2 class="slide-title">Built-In Network Effects</h2>
                         <p class="slide-subtitle">Most dating products are worth the most on day one and worthless the moment they succeed. Vow is built to do the opposite.</p>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem;">
+                    <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1rem;">
                         <div>
-                            <h4 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 0.3rem;"><span class="highlight-text">✓</span> Accountability Keeps Singles</h4>
-                            <p class="card-desc">Bad actors get filtered out because the platform actively rewards long-term, verified track records. The dating resume gets more valuable and authoritative the more honestly and consistently it is kept.</p>
+                            <h4 style="font-family: var(--font-heading); font-size: 1.2rem; margin-bottom: 0.25rem;"><span class="highlight-text">✓</span> Accountability Keeps Singles</h4>
+                            <p class="card-desc">Bad actors get filtered out because the platform actively rewards long-term, verified track records. The user's platform history gets more valuable and authoritative the more honestly and consistently they engage.</p>
                         </div>
                         <div>
-                            <h4 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 0.3rem;"><span class="accent-text">✓</span> Retention Keeps Couples</h4>
-                            <p class="card-desc">Unlike a standard dating app that gets deleted the day someone finds a match, Vow becomes more useful the moment a couple forms — that's when Couples Mode begins, preserving historical memories and keeping users in our ecosystem.</p>
+                            <h4 style="font-family: var(--font-heading); font-size: 1.2rem; margin-bottom: 0.25rem;"><span class="accent-text">✓</span> Retention Keeps Couples</h4>
+                            <p class="card-desc">Unlike a standard dating app that gets deleted the day someone finds a match, Vow becomes more useful the moment a couple forms - that's when Couples Mode begins, preserving historical memories and keeping users in our ecosystem.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- SLIDE 9: Go-To-Market -->
-        <section class="slide" id="slide-9" data-section="GO-TO-MARKET • SLIDE 9">
+        <!-- SLIDE 9: The Founders (New Team Slide as requested) -->
+        <section class="slide" id="slide-9" data-section="THE TEAM - SLIDE 9">
             <div class="slide-header">
-                <h2 class="slide-title">Capturing Early Adopters</h2>
-                <p class="slide-subtitle">A simple, viral strategy focused on organic social sharing and high-density launchpads.</p>
+                <h2 class="slide-title">The Founders</h2>
+                <p class="slide-subtitle">Combining consumer product engineering, viral network design, and security architecture.</p>
             </div>
-            
-            <div class="timeline-container">
-                <div class="timeline-line"></div>
-                <div class="timeline-nodes">
-                    <div class="timeline-node">
-                        <div class="node-bubble">1</div>
-                        <span class="node-phase">Phase 1 — Alpha Launch</span>
-                        <h4 class="node-title">Hyper-Local</h4>
-                        <p class="node-desc">Launch a high-fidelity MVP in one tech-forward, high-density city to prove the Dating Resume with young professionals first.</p>
+            <div class="team-grid">
+                <div class="founder-card">
+                    <div class="founder-avatar-frame">
+                        <img src="adam.jpg" alt="Adam Dono" class="founder-photo">
                     </div>
-                    <div class="timeline-node">
-                        <div class="node-bubble">2</div>
-                        <span class="node-phase">Phase 2 — Viral Loops</span>
-                        <h4 class="node-title">TikTok & Reels</h4>
-                        <p class="node-desc">Public, highly shareable Dating Resumes drive organic acquisition through the same platforms already popularizing the format.</p>
+                    <div class="founder-meta-info">
+                        <h3 class="founder-name">Adam Dono</h3>
+                        <span class="founder-role">Founder & Product Lead</span>
+                        <p class="card-desc">A visionary UI/UX Designer and Full-Stack Developer with 5 years of experience crafting intuitive, high-performance web applications. Adam seamlessly bridges the gap between stunning visual aesthetics and robust technical execution, driving Vow's product vision and seamless user experience.</p>
                     </div>
-                    <div class="timeline-node">
-                        <div class="node-bubble">3</div>
-                        <span class="node-phase">Phase 3 — Referral Boost</span>
-                        <h4 class="node-title">Bring Your Partner</h4>
-                        <p class="node-desc">Reward users who successfully onboard a partner with free premium features, turning every new couple into a growth loop.</p>
+                </div>
+                <div class="founder-card">
+                    <div class="founder-avatar-frame">
+                        <div class="founder-avatar-inner" style="background: #1e113a; color: var(--accent-color);">TL</div>
+                    </div>
+                    <div class="founder-meta-info">
+                        <h3 class="founder-name">Co-Founder</h3>
+                        <span class="founder-role">Tech Lead & SecOps</span>
+                        <p class="card-desc">An expert Security & Infrastructure Engineer bringing 4 years of specialized experience in scalable backend architecture and DevOps. He designs resilient, zero-trust cloud environments and airtight data pipelines, ensuring unparalleled privacy and performance for Vow's growing user base.</p>
                     </div>
                 </div>
             </div>
-
-            <div class="bottom-banner" style="margin-top: 1rem;">
-                <span class="bottom-banner-icon">🚀</span>
+            <div class="bottom-banner" style="margin-top: 1.5rem;">
+                <span class="bottom-banner-icon">👥</span>
                 <div>
-                    <strong>Organic Growth Engine:</strong> By piggybacking on natural social sharing (e.g., "Look at my dating score/history"), Vow utilizes built-in growth mechanics that drastically lower Customer Acquisition Costs (CAC).
+                    <strong>Advisory Board:</strong> Actively scaling with consulting psychologists, platform security engineers, and consumer viral growth advisors.
                 </div>
             </div>
         </section>
 
-        <!-- SLIDE 10: The Ask -->
-        <section class="slide" id="slide-10" data-section="THE ASK • SLIDE 10">
+        <!-- SLIDE 10: The Ask & Execution Plan (GTM, Milestones, and Fund Raise merged) -->
+        <section class="slide" id="slide-10" data-section="THE ASK & EXECUTION - SLIDE 10">
             <div class="grid-2col">
                 <div>
                     <div class="slide-header">
-                        <h2 class="slide-title">Let's Change How We Love</h2>
-                        <p class="slide-subtitle">"Vow: because the most important commitment of your life deserves a trusted ledger."</p>
+                        <h2 class="slide-title">The Ask & Execution</h2>
+                        <p class="slide-subtitle"><strong>The Ask:</strong> $750k SAFE (Post-Money Cap: $5.0M) &nbsp;|&nbsp; <strong>Runway:</strong> 18 months of operating capital</p>
                     </div>
                     
-                    <div class="collage-container">
-                        <svg class="collage-svg" viewBox="0 0 400 300">
-                            <!-- Ring Outline SVG Visual -->
-                            <circle cx="150" cy="150" r="70" fill="none" stroke="var(--primary-color)" stroke-width="4" filter="drop-shadow(0 0 10px var(--primary-glow))" />
-                            <circle cx="250" cy="150" r="70" fill="none" stroke="var(--accent-color)" stroke-width="4" filter="drop-shadow(0 0 10px var(--accent-glow))" />
-                            
-                            <!-- Heart overlapping -->
-                            <path d="M200,105 C190,95 170,95 160,105 C150,115 150,135 170,155 L200,185 L230,155 C250,135 250,115 240,105 C230,95 210,95 200,105 Z" fill="var(--primary-color)" opacity="0.85" />
-                            
-                            <text x="200" y="240" font-family="'Outfit', sans-serif" font-weight="bold" font-size="16" fill="#fff" text-anchor="middle">THE COVENANT OF TRUST</text>
-                            <text x="200" y="260" font-family="'Inter', sans-serif" font-size="12" fill="var(--text-muted)" text-anchor="middle">Singles Match. Couples Commit.</text>
-                        </svg>
-                    </div>
-                </div>
-                <div>
-                    <div class="glass-card" style="height: 100%; display: flex; flex-direction: column; justify-content: center;">
-                        <h3 class="card-title" style="color: var(--accent-color); font-size: 1.6rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">The Ask & Collaboration</h3>
+                    <div class="glass-card" style="margin-top: 1rem; padding: 1.25rem;">
+                        <h3 class="card-title" style="color: var(--primary-color); margin-bottom: 0.5rem;">SAFE Funding Allocation</h3>
                         <ul class="heart-list">
                             <li>
-                                <strong>Strategic Partners</strong>
-                                Aligned early investors and operators who know relationships, trust & safety, or consumer growth.
+                                <strong>50% Product & Security Engineering</strong>
+                                Complete secure double-blind check-in engines and transition logs.
                             </li>
                             <li>
-                                <strong>Early Beta Testers</strong>
-                                Real singles and couples to pressure-test the Dating Resume and Relationship Pulse before public launch.
+                                <strong>35% Local Acquisition & GTM Launch</strong>
+                                Viral TikTok loops, campus dating campaigns, and beta loops.
                             </li>
                             <li>
-                                <strong>Advisory Input</strong>
-                                Guidance on navigating the algorithmic matching system responsibly as we scale.
+                                <strong>15% Operations & Legal</strong>
+                                Vetting compliance, trust policies, and secure data audit systems.
                             </li>
                         </ul>
                     </div>
                 </div>
-            </div>
-        </section>
+                <div>
+                    <div class="glass-card" style="height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
+                        <h3 class="card-title" style="color: var(--accent-color); font-size: 1.3rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1rem;">18-Month Milestones</h3>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; color: #fff; margin-bottom: 0.2rem;">
+                                    <span>Month 1 - 6: Alpha Release</span>
+                                    <span class="accent-text">10k Users</span>
+                                </div>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.3;">Launch Vow Platform in first high-density metropolitan area.</p>
+                            </div>
+                            
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; color: #fff; margin-bottom: 0.2rem;">
+                                    <span>Month 6 - 12: Couples Release</span>
+                                    <span class="accent-text">40k Users</span>
+                                </div>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.3;">Unlock Couples Mode and launch recommended B2B Date Night bookings.</p>
+                            </div>
+                            
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; color: #fff; margin-bottom: 0.2rem;">
+                                    <span>Month 12 - 18: Expansion & Scale</span>
+                                    <span class="accent-text">100k Users / $30k MRR</span>
+                                </div>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.3;">Scale to 3 major urban hubs, achieving $30k MRR to position for Series Seed.</p>
+                            </div>
+                        </div>
 
-        <!-- SLIDE 11: Image Sources -->
-        <section class="slide" id="slide-11" data-section="IMAGE SOURCES • SLIDE 11">
-            <div class="slide-header">
-                <h2 class="slide-title">Image Sources</h2>
-                <p class="slide-subtitle">Attributions for external photography and media templates referenced in the pitch deck slides.</p>
+                        <!-- Mini milestone progress line -->
+                        <svg class="milestones-timeline-svg" viewBox="0 0 250 40">
+                            <line x1="15" y1="20" x2="235" y2="20" stroke="rgba(255,255,255,0.1)" stroke-width="2"></line>
+                            <line x1="15" y1="20" x2="160" y2="20" stroke="var(--primary-color)" stroke-width="2"></line>
+                            
+                            <circle cx="15" cy="20" r="5" fill="var(--primary-color)"></circle>
+                            <circle cx="100" cy="20" r="5" fill="var(--primary-color)"></circle>
+                            <circle cx="180" cy="20" r="5" fill="var(--accent-color)"></circle>
+                            <circle cx="235" cy="20" r="5" fill="rgba(255,255,255,0.2)"></circle>
+                        </svg>
+                    </div>
+                </div>
             </div>
-            
-            <table class="source-table">
-                <thead>
-                    <tr>
-                        <th style="width: 25%">Resource</th>
-                        <th style="width: 55%">Original Source URL</th>
-                        <th style="width: 20%">Domain</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Cyberpunk Tech BG</strong> (Slide 3)</td>
-                        <td><a href="https://static.vecteezy.com/system/resources/previews/022/004/093/non_2x/digital-technology-metaverse-neon-blue-pink-purple-background-cyber-information-abstract-speed-connect-communication-retro-future-meta-tech-internet-network-connection-ai-big-data-illustration-3d-vector.jpg" target="_blank" class="source-link">static.vecteezy.com/system/...</a></td>
-                        <td>vecteezy.com</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Party/Lifestyle Image</strong> (Slide 9)</td>
-                        <td><a href="https://hellobeautiful.com/wp-content/uploads/sites/50/2026/07/17830950804572.jpg" target="_blank" class="source-link">hellobeautiful.com/wp-content/...</a></td>
-                        <td>hellobeautiful.com</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Couples Collage Image</strong> (Slide 10)</td>
-                        <td><a href="https://media-api.xogrp.com/images/381eac2f-2a4-4cba-b86d-9ba3ad2c393c" target="_blank" class="source-link">media-api.xogrp.com/images/...</a></td>
-                        <td>theknot.com</td>
-                    </tr>
-                </tbody>
-            </table>
         </section>
 
     </main>
@@ -1980,7 +1757,7 @@
             <span class="footer-logo-text">Vow</span>
         </a>
         
-        <div class="footer-meta" id="slide-meta-title">SEED-STAGE PITCH • 2026</div>
+        <div class="footer-meta" id="slide-meta-title">SEED-STAGE PITCH - 2026</div>
 
         <div class="nav-controls">
             <button class="arrow-btn" id="prev-btn" title="Previous Slide (Left Arrow)">←</button>
@@ -1988,7 +1765,7 @@
                 <!-- Dots injected via JS -->
             </div>
             <button class="arrow-btn" id="next-btn" title="Next Slide (Right Arrow or Space)">→</button>
-            <span class="slide-counter" id="slide-counter">1 / 11</span>
+            <span class="slide-counter" id="slide-counter">1 / 10</span>
         </div>
     </footer>
 
