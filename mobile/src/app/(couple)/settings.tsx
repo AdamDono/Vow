@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { setAuthToken } from '../../lib/api'
 
 const SETTINGS = [
   { icon: 'notifications-outline', label: 'Notifications', sub: 'Daily check-in reminders' },
@@ -9,6 +10,11 @@ const SETTINGS = [
 ]
 
 export default function CoupleSettingsScreen() {
+  const handleLogout = () => {
+    setAuthToken(null)
+    router.replace('/(auth)/login')
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
@@ -29,6 +35,17 @@ export default function CoupleSettingsScreen() {
             <Ionicons name="chevron-forward" size={16} color="#A0A0B0" />
           </Pressable>
         ))}
+      </View>
+
+      {/* Logout Action Button */}
+      <View style={{ marginHorizontal: 20, marginBottom: 24 }}>
+        <Pressable
+          style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.85 }]}
+          onPress={handleLogout}
+        >
+          <Ionicons name="log-out-outline" size={20} color="#DC2626" />
+          <Text style={styles.logoutBtnText}>Log Out of Account</Text>
+        </Pressable>
       </View>
 
       {/* Danger Zone */}
@@ -63,4 +80,6 @@ const styles = StyleSheet.create({
   dangerButton: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 16 },
   dangerButtonText: { flex: 1, fontSize: 15, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#E8475E' },
   dangerNote: { fontSize: 13, fontFamily: 'PlusJakartaSans_400Regular', color: '#A0A0B0', paddingHorizontal: 16, paddingBottom: 16, lineHeight: 20 },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 16, paddingVertical: 16, borderWidth: 1.5, borderColor: '#FECACA' },
+  logoutBtnText: { fontSize: 16, fontFamily: 'PlusJakartaSans_700Bold', color: '#DC2626' },
 })

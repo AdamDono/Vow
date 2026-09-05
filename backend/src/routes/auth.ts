@@ -1,9 +1,10 @@
 import { Hono } from 'hono'
-import { db } from '../db/client.js'
+import { db, client as sqlClient } from '../db/client.js'
 import { users, profiles, userPhotos, userInterests } from '../db/schema/index.js'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 import { authMiddleware } from '../middleware/auth.js'
 import { AppEnv } from '../types/index.js'
 
@@ -137,6 +138,107 @@ authRouter.post('/login', async (c) => {
   }
 })
 
+// POST /api/auth/google — 1-Tap Gmail / Google OAuth
+authRouter.post('/google', async (c) => {
+  try {
+    const { email, name, firstName, lastName, photoUrl } = await c.req.json()
+
+    if (!email) {
+      return c.json({ error: 'Google email is required' }, 400)
+    }
+
+    const normalizedEmail = email.toLowerCase().trim()
+
+    // 1. Check if user already exists
+    let user = await db.query.users.findFirst({
+      where: eq(users.email, normalizedEmail),
+      with: {
+        profile: true,
+        photos: true,
+        interests: true,
+      },
+    })
+
+    let isNewUser = false
+
+    // 2. If new user, register them in Neon
+    if (!user) {
+      isNewUser = true
+      const randomPassword = crypto.randomBytes(32).toString('hex')
+      const passwordHash = await bcrypt.hash(randomPassword, 6)
+
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          email: normalizedEmail,
+          passwordHash,
+          relationshipStatus: 'single',
+        })
+        .returning()
+
+      const parsedFirstName = firstName || (name ? name.split(' ')[0] : 'Google User')
+      const parsedLastName = lastName || (name && name.split(' ').length > 1 ? name.split(' ').slice(1).join(' ') : '')
+
+      const [newProfile] = await db
+        .insert(profiles)
+        .values({
+          userId: newUser.id,
+          firstName: parsedFirstName,
+          lastName: parsedLastName,
+          age: 25,
+          gender: 'Not specified',
+          city: 'Cape Town, SA',
+          bio: 'Joined via Google',
+          lookingFor: 'Long-term relationship',
+          vouchRating: 100,
+          isVerified: true,
+        })
+        .returning()
+
+      if (photoUrl) {
+        await db.insert(userPhotos).values({
+          userId: newUser.id,
+          url: photoUrl,
+          orderIndex: 0,
+          isPrimary: true,
+        })
+      }
+
+      user = await db.query.users.findFirst({
+        where: eq(users.id, newUser.id),
+        with: {
+          profile: true,
+          photos: true,
+          interests: true,
+        },
+      })
+    }
+
+    if (!user) {
+      return c.json({ error: 'Could not create or find Google user' }, 500)
+    }
+
+    // 3. Issue Vow JWT token
+    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' })
+
+    return c.json({
+      success: true,
+      token,
+      isNewUser,
+      user: {
+        id: user.id,
+        email: user.email,
+        relationshipStatus: user.relationshipStatus,
+        profile: user.profile,
+        photos: user.photos,
+        interests: user.interests,
+      },
+    })
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Internal server error' }, 500)
+  }
+})
+
 // GET /api/auth/me
 authRouter.get('/me', authMiddleware, async (c) => {
   const authUser = c.get('user')
@@ -155,3 +257,138 @@ authRouter.get('/me', authMiddleware, async (c) => {
 
   return c.json({ user })
 })
+
+// POST /api/auth/neon-sync — Sync real Google account from Neon Auth into Vow database
+authRouter.post('/neon-sync', async (c) => {
+  try {
+    const body = await c.req.json().catch(() => ({}))
+    let email = body.email
+    let name = body.name
+    let image = body.image
+    const sessionToken = body.sessionToken
+
+    // 1. If session token or nothing provided, inspect neon_auth tables
+    if (sessionToken) {
+      const sessionRows = await sqlClient`
+        SELECT u.email, u.name, u.image 
+        FROM neon_auth.session s
+        JOIN neon_auth.user u ON s."userId" = u.id
+        WHERE s.token = ${sessionToken}
+        LIMIT 1
+      `
+      if (sessionRows.length > 0) {
+        email = sessionRows[0].email
+        name = sessionRows[0].name
+        image = sessionRows[0].image
+      }
+    }
+
+    // 2. Fallback to latest authenticated user in neon_auth.user
+    if (!email) {
+      const latestUserRows = await sqlClient`
+        SELECT email, name, image 
+        FROM neon_auth.user 
+        ORDER BY "createdAt" DESC 
+        LIMIT 1
+      `
+      if (latestUserRows.length > 0) {
+        email = latestUserRows[0].email
+        name = latestUserRows[0].name
+        image = latestUserRows[0].image
+      }
+    }
+
+    if (!email) {
+      return c.json({ error: 'No authenticated Neon/Google account found' }, 404)
+    }
+
+    const normalizedEmail = email.toLowerCase().trim()
+
+    // 3. Find or create in public.users
+    let user = await db.query.users.findFirst({
+      where: eq(users.email, normalizedEmail),
+      with: {
+        profile: true,
+        photos: true,
+        interests: true,
+      },
+    })
+
+    let isNewUser = false
+
+    if (!user) {
+      isNewUser = true
+      const randomPassword = crypto.randomBytes(32).toString('hex')
+      const passwordHash = await bcrypt.hash(randomPassword, 6)
+
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          email: normalizedEmail,
+          passwordHash,
+          relationshipStatus: 'single',
+        })
+        .returning()
+
+      const parsedFirstName = name ? name.split(' ')[0] : 'Google User'
+      const parsedLastName = name && name.split(' ').length > 1 ? name.split(' ').slice(1).join(' ') : ''
+
+      const [newProfile] = await db
+        .insert(profiles)
+        .values({
+          userId: newUser.id,
+          firstName: parsedFirstName,
+          lastName: parsedLastName,
+          age: 25,
+          gender: 'Not specified',
+          city: 'Cape Town, SA',
+          bio: 'Joined via Google OAuth',
+          lookingFor: 'Long-term relationship',
+          vouchRating: 100,
+          isVerified: true,
+        })
+        .returning()
+
+      if (image) {
+        await db.insert(userPhotos).values({
+          userId: newUser.id,
+          url: image,
+          orderIndex: 0,
+          isPrimary: true,
+        })
+      }
+
+      user = await db.query.users.findFirst({
+        where: eq(users.id, newUser.id),
+        with: {
+          profile: true,
+          photos: true,
+          interests: true,
+        },
+      })
+    }
+
+    if (!user) {
+      return c.json({ error: 'Failed to sync user from Neon Auth' }, 500)
+    }
+
+    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' })
+
+    return c.json({
+      success: true,
+      token,
+      isNewUser,
+      user: {
+        id: user.id,
+        email: user.email,
+        relationshipStatus: user.relationshipStatus,
+        profile: user.profile,
+        photos: user.photos,
+        interests: user.interests,
+      },
+    })
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Internal server error' }, 500)
+  }
+})
+

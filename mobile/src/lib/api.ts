@@ -40,6 +40,10 @@ export const api = {
     signup: (data: any) => apiRequest<any>('/api/auth/signup', { method: 'POST', body: JSON.stringify(data) }),
     login: (credentials: { email: string; password: string }) =>
       apiRequest<any>('/api/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
+    googleLogin: (payload: { email: string; name?: string; firstName?: string; lastName?: string; photoUrl?: string }) =>
+      apiRequest<any>('/api/auth/google', { method: 'POST', body: JSON.stringify(payload) }),
+    neonSync: (payload?: { sessionToken?: string; email?: string; name?: string; image?: string }) =>
+      apiRequest<any>('/api/auth/neon-sync', { method: 'POST', body: JSON.stringify(payload || {}) }),
     me: () => apiRequest<any>('/api/auth/me'),
   },
 

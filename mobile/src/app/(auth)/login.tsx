@@ -1,14 +1,41 @@
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import * as WebBrowser from 'expo-web-browser'
 import { api, setAuthToken } from '../../lib/api'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Listen for OAuth popup completion message on web
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.type === 'GOOGLE_AUTH_SUCCESS' && event.data.token) {
+          setAuthToken(event.data.token)
+          setGoogleLoading(false)
+          if (event.data.isNewUser) {
+            router.replace('/(auth)/onboarding/basics')
+          } else if (event.data.user?.relationshipStatus === 'coupled') {
+            router.replace('/(couple)/dashboard')
+          } else {
+            router.replace('/(single)/discover')
+          }
+        }
+      }
+
+      window.addEventListener('message', handleMessage)
+      return () => {
+        window.removeEventListener('message', handleMessage)
+      }
+    }
+  }, [])
 
   const handleLogin = async (overrideEmail?: string, overridePassword?: string) => {
     const loginEmail = overrideEmail || email
@@ -47,6 +74,92 @@ export default function LoginScreen() {
     setEmail(demoEmail)
     setPassword('password123')
     handleLogin(demoEmail, 'password123')
+  }
+
+  // Real Google OAuth via Neon Auth
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true)
+    setErrorMessage(null)
+
+    // Pre-open popup synchronously on user click to prevent browser popup blocking
+    let popup: Window | null = null
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const width = 520
+      const height = 650
+      const left = window.screenX + (window.outerWidth - width) / 2
+      const top = window.screenY + (window.outerHeight - height) / 2
+      popup = window.open(
+        'about:blank',
+        'GoogleSignIn',
+        `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,status=no`
+      )
+      if (popup) {
+        try {
+          popup.document.write('<html><head><title>Connecting to Google...</title></head><body style="background:#FFFBF9;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:system-ui,-apple-system,sans-serif;color:#1A1A2E;"><div style="font-size:18px;font-weight:600;margin-bottom:8px;">Connecting to Google...</div><div style="font-size:14px;color:#6B6B7B;">Please wait while we redirect you.</div></body></html>')
+        } catch (_) {}
+      }
+    }
+
+    try {
+      const origin = Platform.OS === 'web' && typeof window !== 'undefined'
+        ? window.location.origin
+        : 'http://localhost:8081'
+      const callbackURL = `${origin}/(auth)/callback`
+
+      const authUrl = process.env.EXPO_PUBLIC_NEON_AUTH_URL || 'https://ep-still-truth-a5iuhm2p.neonauth.us-east-2.aws.neon.tech/neondb/auth'
+
+      const res = await fetch(`${authUrl}/sign-in/social`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': origin,
+        },
+        body: JSON.stringify({
+          provider: 'google',
+          callbackURL,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (data.url) {
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          if (popup && !popup.closed) {
+            popup.location.href = data.url
+            const checkClosed = setInterval(() => {
+              if (popup?.closed) {
+                clearInterval(checkClosed)
+                setGoogleLoading(false)
+              }
+            }, 1000)
+          } else {
+            // Fallback: simulated click on target=_blank
+            const link = document.createElement('a')
+            link.href = data.url
+            link.target = '_blank'
+            link.rel = 'noopener noreferrer'
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+          }
+        } else {
+          const authResult = await WebBrowser.openAuthSessionAsync(data.url, callbackURL)
+          if (authResult.type === 'success') {
+            router.replace('/(auth)/callback')
+          }
+          setGoogleLoading(false)
+        }
+      } else {
+        if (popup) popup.close()
+        setGoogleLoading(false)
+        setErrorMessage(data.message || 'Could not initiate Google authentication.')
+      }
+    } catch (err: any) {
+      if (popup) popup.close()
+      console.error('Google Sign-In Error:', err)
+      setErrorMessage(err.message || 'Google sign in failed. Please try again.')
+      setGoogleLoading(false)
+    }
   }
 
   return (
@@ -135,7 +248,7 @@ export default function LoginScreen() {
           <Pressable
             style={({ pressed }) => [styles.primaryButton, pressed && { opacity: 0.9 }]}
             onPress={() => handleLogin()}
-            disabled={loading}
+            disabled={loading || googleLoading}
           >
             <LinearGradient
               colors={['#E8475E', '#C73350']}
@@ -158,12 +271,34 @@ export default function LoginScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Social auth placeholder */}
-          <Pressable style={styles.socialButton}>
-            <Text style={styles.socialButtonText}>🍎  Continue with Apple</Text>
+          {/* Real Google OAuth Button */}
+          <Pressable
+            style={({ pressed }) => [styles.googleButton, pressed && { opacity: 0.85 }]}
+            onPress={handleGoogleSignIn}
+            disabled={loading || googleLoading}
+          >
+            <View style={styles.socialInner}>
+              {googleLoading ? (
+                <ActivityIndicator size="small" color="#4285F4" />
+              ) : (
+                <Image
+                  source={{ uri: 'https://developers.google.com/static/identity/images/g-logo.png' }}
+                  style={styles.googleIconImage}
+                  resizeMode="contain"
+                />
+              )}
+              <Text style={styles.googleButtonText}>
+                {googleLoading ? 'Connecting to Google...' : 'Continue with Google'}
+              </Text>
+            </View>
           </Pressable>
+
+          {/* Apple sign-in */}
           <Pressable style={[styles.socialButton, { marginTop: 12 }]}>
-            <Text style={styles.socialButtonText}>🔵  Continue with Google</Text>
+            <View style={styles.socialInner}>
+              <Ionicons name="logo-apple" size={20} color="#1A1A2E" />
+              <Text style={styles.socialButtonText}>Continue with Apple</Text>
+            </View>
           </Pressable>
         </View>
 
@@ -206,6 +341,10 @@ const styles = StyleSheet.create({
   divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 20 },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#F0EDEF' },
   dividerText: { fontSize: 14, fontFamily: 'PlusJakartaSans_400Regular', color: '#A0A0B0' },
+  googleButton: { backgroundColor: '#FFFFFF', borderRadius: 14, paddingVertical: 16, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  socialInner: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  googleIconImage: { width: 22, height: 22 },
+  googleButtonText: { fontSize: 16, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#1A1A2E' },
   socialButton: { backgroundColor: '#FFFFFF', borderRadius: 14, paddingVertical: 16, alignItems: 'center', borderWidth: 1.5, borderColor: '#F0EDEF' },
   socialButtonText: { fontSize: 16, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#1A1A2E' },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
