@@ -1,12 +1,31 @@
 import { View, Text, StyleSheet, TextInput, Pressable, ScrollView } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { api } from '../../../lib/api'
+import { updateOnboardingData, getOnboardingData } from '../../../lib/onboardingStore'
 
 const MAX_CHARS = 300
 
 export default function BioScreen() {
   const [bio, setBio] = useState('')
+
+  useEffect(() => {
+    const existing = getOnboardingData()
+    if (existing.bio) setBio(existing.bio)
+  }, [])
+
+  const handleContinue = () => {
+    updateOnboardingData({ bio: bio.trim() })
+    if (bio.trim()) {
+      api.auth.updateProfile({ bio: bio.trim() }).catch(() => {})
+    }
+    router.push('/(auth)/onboarding/goals')
+  }
+
+  const handleSkip = () => {
+    router.push('/(auth)/onboarding/goals')
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -18,7 +37,7 @@ export default function BioScreen() {
       </View>
 
       <Text style={styles.title}>About you</Text>
-      <Text style={styles.subtitle}>What makes you, you? Write something that shows your personality.</Text>
+      <Text style={styles.subtitle}>What makes you, you? Write something that shows your real personality.</Text>
 
       <View style={styles.textAreaContainer}>
         <TextInput
@@ -44,7 +63,7 @@ export default function BioScreen() {
           <Pressable
             key={prompt}
             style={styles.promptPill}
-            onPress={() => setBio((prev) => prev ? `${prev}\n${prompt}` : prompt)}
+            onPress={() => setBio((prev) => prev ? `${prev}\n${prompt} ` : `${prompt} `)}
           >
             <Text style={styles.promptPillText}>{prompt}</Text>
           </Pressable>
@@ -52,12 +71,12 @@ export default function BioScreen() {
       </View>
 
       <View style={styles.buttonRow}>
-        <Pressable style={styles.skipButton} onPress={() => router.push('/(auth)/onboarding/goals')}>
+        <Pressable style={styles.skipButton} onPress={handleSkip}>
           <Text style={styles.skipButtonText}>Skip for now</Text>
         </Pressable>
         <Pressable
           style={({ pressed }) => [styles.primaryButton, pressed && { opacity: 0.9 }]}
-          onPress={() => router.push('/(auth)/onboarding/goals')}
+          onPress={handleContinue}
         >
           <LinearGradient colors={['#E8475E', '#C73350']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.primaryButtonGradient}>
             <Text style={styles.primaryButtonText}>Continue</Text>

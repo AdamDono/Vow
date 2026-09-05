@@ -258,6 +258,95 @@ authRouter.get('/me', authMiddleware, async (c) => {
   return c.json({ user })
 })
 
+// PUT /api/auth/profile — Update user profile & onboarding data in real-time
+authRouter.put('/profile', authMiddleware, async (c) => {
+  try {
+    const authUser = c.get('user')
+    const body = await c.req.json()
+    const { firstName, lastName, age, gender, city, bio, lookingFor, photos, interests } = body
+
+    // 1. Update or insert profiles table
+    const profileUpdate: Record<string, any> = {
+      updatedAt: new Date(),
+    }
+    if (firstName !== undefined && firstName !== null) profileUpdate.firstName = String(firstName).trim()
+    if (lastName !== undefined && lastName !== null) profileUpdate.lastName = String(lastName).trim()
+    if (age !== undefined && age !== null && !isNaN(Number(age))) profileUpdate.age = Number(age)
+    if (gender !== undefined && gender !== null) profileUpdate.gender = String(gender)
+    if (city !== undefined && city !== null) profileUpdate.city = String(city).trim()
+    if (bio !== undefined && bio !== null) profileUpdate.bio = String(bio).trim()
+    if (lookingFor !== undefined && lookingFor !== null) profileUpdate.lookingFor = String(lookingFor)
+
+    const existingProfile = await db.query.profiles.findFirst({
+      where: eq(profiles.userId, authUser.userId),
+    })
+
+    if (existingProfile) {
+      await db
+        .update(profiles)
+        .set(profileUpdate)
+        .where(eq(profiles.userId, authUser.userId))
+    } else {
+      await db.insert(profiles).values({
+        userId: authUser.userId,
+        firstName: firstName || 'Vow Member',
+        lastName: lastName || '',
+        age: age ? Number(age) : 25,
+        gender: gender || 'Not specified',
+        city: city || 'Johannesburg',
+        bio: bio || '',
+        lookingFor: lookingFor || 'Long-term relationship',
+        vouchRating: 100,
+        isVerified: true,
+      })
+    }
+
+    // 2. Update photos if provided
+    if (Array.isArray(photos) && photos.length > 0) {
+      await db.delete(userPhotos).where(eq(userPhotos.userId, authUser.userId))
+      for (let i = 0; i < photos.length; i++) {
+        if (photos[i]) {
+          await db.insert(userPhotos).values({
+            userId: authUser.userId,
+            url: photos[i],
+            orderIndex: i,
+            isPrimary: i === 0,
+          })
+        }
+      }
+    }
+
+    // 3. Update interests if provided
+    if (Array.isArray(interests) && interests.length > 0) {
+      await db.delete(userInterests).where(eq(userInterests.userId, authUser.userId))
+      for (const item of interests) {
+        if (item) {
+          const interestText = typeof item === 'string' ? item : item.interest
+          await db.insert(userInterests).values({
+            userId: authUser.userId,
+            interest: interestText,
+          })
+        }
+      }
+    }
+
+    // 4. Return updated user object
+    const updatedUser = await db.query.users.findFirst({
+      where: eq(users.id, authUser.userId),
+      with: {
+        profile: true,
+        photos: true,
+        interests: true,
+      },
+    })
+
+    return c.json({ success: true, user: updatedUser })
+  } catch (err: any) {
+    console.error('Profile update error:', err)
+    return c.json({ error: err.message || 'Failed to update profile' }, 500)
+  }
+})
+
 // POST /api/auth/neon-sync — Sync real Google account from Neon Auth into Vow database
 authRouter.post('/neon-sync', async (c) => {
   try {

@@ -1,7 +1,9 @@
 import { View, Text, StyleSheet, TextInput, Pressable, ScrollView } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { api } from '../../../lib/api'
+import { updateOnboardingData, getOnboardingData } from '../../../lib/onboardingStore'
 
 const GENDERS = ['Man', 'Woman', 'Non-binary', 'Prefer not to say']
 
@@ -10,7 +12,41 @@ export default function BasicsScreen() {
   const [age, setAge] = useState('')
   const [gender, setGender] = useState('')
 
-  const canContinue = name.trim().length > 0 && Number(age) >= 18 && gender
+  useEffect(() => {
+    // Pre-populate with existing state or Google profile if available
+    const existing = getOnboardingData()
+    if (existing.firstName) setName(existing.firstName)
+    if (existing.age) setAge(String(existing.age))
+    if (existing.gender) setGender(existing.gender)
+
+    if (!existing.firstName) {
+      api.auth.me().then((res) => {
+        if (res?.user?.profile?.firstName) {
+          setName(res.user.profile.firstName)
+        }
+      }).catch(() => {})
+    }
+  }, [])
+
+  const canContinue = name.trim().length > 0 && Number(age) >= 18 && Boolean(gender)
+
+  const handleContinue = () => {
+    if (!canContinue) return
+    const numericAge = Number(age)
+    updateOnboardingData({
+      firstName: name.trim(),
+      age: numericAge,
+      gender,
+    })
+    // Background sync to backend
+    api.auth.updateProfile({
+      firstName: name.trim(),
+      age: numericAge,
+      gender,
+    }).catch(() => {})
+
+    router.push('/(auth)/onboarding/photos')
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -42,7 +78,7 @@ export default function BasicsScreen() {
           <Text style={styles.label}>Age</Text>
           <TextInput
             style={styles.input}
-            placeholder="Your age"
+            placeholder="Your age (e.g. 28)"
             placeholderTextColor="#A0A0B0"
             value={age}
             onChangeText={setAge}
@@ -72,7 +108,7 @@ export default function BasicsScreen() {
 
       <Pressable
         style={({ pressed }) => [styles.primaryButton, !canContinue && styles.primaryButtonDisabled, pressed && canContinue && { opacity: 0.9 }]}
-        onPress={() => canContinue && router.push('/(auth)/onboarding/photos')}
+        onPress={handleContinue}
         disabled={!canContinue}
       >
         <LinearGradient

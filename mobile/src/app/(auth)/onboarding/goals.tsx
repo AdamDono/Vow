@@ -1,7 +1,9 @@
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { api } from '../../../lib/api'
+import { updateOnboardingData, getOnboardingData } from '../../../lib/onboardingStore'
 
 const GOALS = [
   { id: 'long_term', label: 'Long-term relationship', emoji: '💍' },
@@ -13,6 +15,23 @@ const GOALS = [
 
 export default function GoalsScreen() {
   const [selected, setSelected] = useState<string | null>(null)
+
+  useEffect(() => {
+    const existing = getOnboardingData()
+    if (existing.lookingFor) {
+      const match = GOALS.find((g) => g.label === existing.lookingFor || g.id === existing.lookingFor)
+      if (match) setSelected(match.id)
+    }
+  }, [])
+
+  const handleContinue = () => {
+    if (!selected) return
+    const goalItem = GOALS.find((g) => g.id === selected)
+    const lookingFor = goalItem?.label || selected
+    updateOnboardingData({ lookingFor })
+    api.auth.updateProfile({ lookingFor }).catch(() => {})
+    router.push('/(auth)/onboarding/interests')
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -46,7 +65,7 @@ export default function GoalsScreen() {
 
       <Pressable
         style={({ pressed }) => [styles.primaryButton, !selected && styles.primaryButtonDisabled, pressed && selected && { opacity: 0.9 }]}
-        onPress={() => selected && router.push('/(auth)/onboarding/interests')}
+        onPress={handleContinue}
         disabled={!selected}
       >
         <LinearGradient

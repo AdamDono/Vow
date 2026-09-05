@@ -1,7 +1,9 @@
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { api } from '../../../lib/api'
+import { updateOnboardingData, getOnboardingData } from '../../../lib/onboardingStore'
 
 const ALL_INTERESTS = [
   { emoji: '🏃', label: 'Running' }, { emoji: '🧘', label: 'Yoga' },
@@ -21,6 +23,13 @@ const MAX_INTERESTS = 5
 export default function InterestsScreen() {
   const [selected, setSelected] = useState<string[]>([])
 
+  useEffect(() => {
+    const existing = getOnboardingData()
+    if (existing.interests && existing.interests.length > 0) {
+      setSelected(existing.interests)
+    }
+  }, [])
+
   const toggle = (label: string) => {
     setSelected((prev) =>
       prev.includes(label)
@@ -29,6 +38,18 @@ export default function InterestsScreen() {
         ? [...prev, label]
         : prev
     )
+  }
+
+  const handleContinue = () => {
+    updateOnboardingData({ interests: selected })
+    if (selected.length > 0) {
+      api.auth.updateProfile({ interests: selected }).catch(() => {})
+    }
+    router.push('/(auth)/onboarding/location')
+  }
+
+  const handleSkip = () => {
+    router.push('/(auth)/onboarding/location')
   }
 
   return (
@@ -63,15 +84,15 @@ export default function InterestsScreen() {
       <Text style={styles.selectionCount}>{selected.length}/{MAX_INTERESTS} selected</Text>
 
       <View style={styles.buttonRow}>
-        <Pressable style={styles.skipButton} onPress={() => router.push('/(auth)/onboarding/location')}>
+        <Pressable style={styles.skipButton} onPress={handleSkip}>
           <Text style={styles.skipButtonText}>Skip</Text>
         </Pressable>
         <Pressable
-          style={({ pressed }) => [styles.primaryButton, !selected.length && styles.primaryButtonDisabled, pressed && selected.length && { opacity: 0.9 }]}
-          onPress={() => router.push('/(auth)/onboarding/location')}
+          style={({ pressed }) => [styles.primaryButton, pressed && { opacity: 0.9 }]}
+          onPress={handleContinue}
         >
           <LinearGradient
-            colors={selected.length ? ['#E8475E', '#C73350'] : ['#E0D8DA', '#CFC8CB']}
+            colors={['#E8475E', '#C73350']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={styles.primaryButtonGradient}
           >
@@ -104,7 +125,6 @@ const styles = StyleSheet.create({
   skipButton: { flex: 1, paddingVertical: 18, alignItems: 'center', borderRadius: 18, borderWidth: 1.5, borderColor: '#F0EDEF', backgroundColor: '#FFFFFF' },
   skipButtonText: { fontSize: 17, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#6B6B7B' },
   primaryButton: { flex: 1, borderRadius: 18, overflow: 'hidden', shadowColor: '#E8475E', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 8 },
-  primaryButtonDisabled: { shadowOpacity: 0 },
   primaryButtonGradient: { paddingVertical: 18, alignItems: 'center', borderRadius: 18 },
   primaryButtonText: { fontSize: 17, fontFamily: 'PlusJakartaSans_700Bold', color: '#FFFFFF' },
 })

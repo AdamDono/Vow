@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet, ScrollView, Image, Pressable, ActivityIndicator, RefreshControl } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
-import { router } from 'expo-router'
-import { useState, useEffect, useCallback } from 'react'
+import { router, useFocusEffect } from 'expo-router'
+import { useState, useCallback } from 'react'
 import { api, setAuthToken } from '../../../lib/api'
 
 export default function ProfileScreen() {
@@ -24,9 +24,11 @@ export default function ProfileScreen() {
     }
   }, [])
 
-  useEffect(() => {
-    fetchUserProfile()
-  }, [fetchUserProfile])
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserProfile()
+    }, [fetchUserProfile])
+  )
 
   const onRefresh = () => {
     setRefreshing(true)
@@ -67,16 +69,25 @@ export default function ProfileScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={styles.title}>My Profile</Text>
           <Text style={styles.headerSub}>Manage your verified identity & account</Text>
         </View>
-        <Pressable
-          style={styles.refreshIconBtn}
-          onPress={onRefresh}
-        >
-          <Ionicons name="reload" size={18} color="#E8475E" />
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            style={styles.editHeaderBtn}
+            onPress={() => router.push('/(single)/profile/edit')}
+          >
+            <Ionicons name="pencil" size={16} color="#E8475E" />
+            <Text style={styles.editHeaderBtnText}>Edit</Text>
+          </Pressable>
+          <Pressable
+            style={styles.refreshIconBtn}
+            onPress={onRefresh}
+          >
+            <Ionicons name="reload" size={18} color="#6B6B7B" />
+          </Pressable>
+        </View>
       </View>
 
       {/* Photo & Verified Card */}
@@ -106,7 +117,7 @@ export default function ProfileScreen() {
       <View style={styles.nameSection}>
         <Text style={styles.name}>{displayName}{age}</Text>
         <View style={styles.metaRow}>
-          <Text style={styles.location}>📍 {profile.city || 'Cape Town, SA'}</Text>
+          <Text style={styles.location}>📍 {profile.city || 'Johannesburg, SA'}</Text>
           <Text style={styles.metaDot}>•</Text>
           <Text style={styles.emailText}>✉️ {user?.email || 'Authenticated'}</Text>
         </View>
@@ -141,6 +152,23 @@ export default function ProfileScreen() {
           </View>
         </View>
         <Text style={styles.historyNote}>Your Vow reputation builds automatically as you build authentic connections.</Text>
+      </View>
+
+      {/* Quick Edit Profile Banner */}
+      <View style={styles.section}>
+        <Pressable
+          style={styles.quickEditCard}
+          onPress={() => router.push('/(single)/profile/edit')}
+        >
+          <View style={styles.quickEditIconWrap}>
+            <Ionicons name="create-outline" size={22} color="#E8475E" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.quickEditTitle}>Edit Profile Details</Text>
+            <Text style={styles.quickEditSub}>Update age, city, bio, and dating intent</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#A0A0B0" />
+        </Pressable>
       </View>
 
       {/* About Me */}
@@ -209,9 +237,12 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, backgroundColor: '#FFFBF9', alignItems: 'center', justifyContent: 'center', gap: 12 },
   loadingText: { fontSize: 15, fontFamily: 'PlusJakartaSans_500Medium', color: '#6B6B7B' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 30, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E', letterSpacing: -0.6 },
   headerSub: { fontSize: 13, fontFamily: 'PlusJakartaSans_400Regular', color: '#8E8E9E', marginTop: 2 },
-  refreshIconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFF0ED', alignItems: 'center', justifyContent: 'center' },
+  editHeaderBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFF0ED', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: '#FDDDE3' },
+  editHeaderBtnText: { fontSize: 14, fontFamily: 'PlusJakartaSans_700Bold', color: '#E8475E' },
+  refreshIconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#F4F2F3', alignItems: 'center', justifyContent: 'center' },
   photoWrapper: { marginHorizontal: 20, borderRadius: 24, overflow: 'hidden', height: 320, position: 'relative', marginBottom: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#F0EDEF' },
   photo: { width: '100%', height: '100%' },
   avatarPlaceholder: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', gap: 8 },
@@ -232,6 +263,10 @@ const styles = StyleSheet.create({
   statusPillText: { fontSize: 13, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#7C3AED' },
   section: { paddingHorizontal: 20, marginBottom: 24 },
   sectionTitle: { fontSize: 16, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E', marginBottom: 12 },
+  quickEditCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1.5, borderColor: '#FDDDE3', shadowColor: '#E8475E', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  quickEditIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#FFF0ED', alignItems: 'center', justifyContent: 'center' },
+  quickEditTitle: { fontSize: 15, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E' },
+  quickEditSub: { fontSize: 13, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B6B7B', marginTop: 2 },
   cardBox: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#F0EDEF' },
   historyCard: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#F0EDEF' },
   historyItem: { flex: 1, alignItems: 'center', gap: 4 },

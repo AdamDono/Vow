@@ -44,6 +44,8 @@ export const api = {
       apiRequest<any>('/api/auth/google', { method: 'POST', body: JSON.stringify(payload) }),
     neonSync: (payload?: { sessionToken?: string; email?: string; name?: string; image?: string }) =>
       apiRequest<any>('/api/auth/neon-sync', { method: 'POST', body: JSON.stringify(payload || {}) }),
+    updateProfile: (data: any) =>
+      apiRequest<any>('/api/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
     me: () => apiRequest<any>('/api/auth/me'),
   },
 

@@ -2,20 +2,36 @@ import { View, Text, StyleSheet, Pressable, Image, ScrollView } from 'react-nati
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { api } from '../../../lib/api'
+import { updateOnboardingData, getOnboardingData } from '../../../lib/onboardingStore'
 
 const MAX_PHOTOS = 6
-const MIN_PHOTOS = 2
+const MIN_PHOTOS = 1
 
 export default function PhotosScreen() {
   const [photos, setPhotos] = useState<string[]>([])
+
+  useEffect(() => {
+    const existing = getOnboardingData()
+    if (existing.photos && existing.photos.length > 0) {
+      setPhotos(existing.photos)
+    } else {
+      // Default placeholder photo if new user
+      api.auth.me().then((res) => {
+        if (res?.user?.photos?.[0]?.url) {
+          setPhotos([res.user.photos[0].url])
+        }
+      }).catch(() => {})
+    }
+  }, [])
 
   const pickPhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (status !== 'granted') return
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [3, 4],
       quality: 0.85,
@@ -32,7 +48,18 @@ export default function PhotosScreen() {
 
   const canContinue = photos.length >= MIN_PHOTOS
 
-  // Build a 3x2 grid of slots
+  const handleContinue = () => {
+    if (!canContinue) return
+    updateOnboardingData({ photos })
+    api.auth.updateProfile({ photos }).catch(() => {})
+    router.push('/(auth)/onboarding/bio')
+  }
+
+  const handleSkip = () => {
+    // If no photos picked, continue with defaults
+    router.push('/(auth)/onboarding/bio')
+  }
+
   const slots = Array.from({ length: MAX_PHOTOS }, (_, i) => photos[i] ?? null)
 
   return (
@@ -46,7 +73,7 @@ export default function PhotosScreen() {
       </View>
 
       <Text style={styles.title}>Add your{'\n'}photos</Text>
-      <Text style={styles.subtitle}>Add at least 2 photos. Your first photo is your main profile photo.</Text>
+      <Text style={styles.subtitle}>Add your profile photos. Your first photo is your main portrait.</Text>
 
       {/* Photo Grid */}
       <View style={styles.photoGrid}>
@@ -78,21 +105,26 @@ export default function PhotosScreen() {
         ))}
       </View>
 
-      <Text style={styles.tip}>💡 Profiles with 4+ photos get 3x more likes</Text>
+      <Text style={styles.tip}>💡 Profiles with clear photos get 3x more authentic connections</Text>
 
-      <Pressable
-        style={({ pressed }) => [styles.primaryButton, !canContinue && styles.primaryButtonDisabled, pressed && canContinue && { opacity: 0.9 }]}
-        onPress={() => canContinue && router.push('/(auth)/onboarding/bio')}
-        disabled={!canContinue}
-      >
-        <LinearGradient
-          colors={canContinue ? ['#E8475E', '#C73350'] : ['#E0D8DA', '#CFC8CB']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={styles.primaryButtonGradient}
+      <View style={styles.buttonRow}>
+        <Pressable style={styles.skipButton} onPress={handleSkip}>
+          <Text style={styles.skipButtonText}>Skip for now</Text>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.primaryButton, !canContinue && styles.primaryButtonDisabled, pressed && canContinue && { opacity: 0.9 }]}
+          onPress={handleContinue}
+          disabled={!canContinue}
         >
-          <Text style={styles.primaryButtonText}>Continue ({photos.length}/{MIN_PHOTOS} min)</Text>
-        </LinearGradient>
-      </Pressable>
+          <LinearGradient
+            colors={canContinue ? ['#E8475E', '#C73350'] : ['#E0D8DA', '#CFC8CB']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={styles.primaryButtonGradient}
+          >
+            <Text style={styles.primaryButtonText}>Continue</Text>
+          </LinearGradient>
+        </Pressable>
+      </View>
     </ScrollView>
   )
 }
@@ -118,7 +150,10 @@ const styles = StyleSheet.create({
   mainBadge: { position: 'absolute', bottom: 8, left: 8, backgroundColor: '#E8475E', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
   mainBadgeText: { fontSize: 11, fontFamily: 'PlusJakartaSans_700Bold', color: '#FFFFFF' },
   tip: { fontSize: 14, fontFamily: 'PlusJakartaSans_400Regular', color: '#A0A0B0', textAlign: 'center', marginBottom: 32 },
-  primaryButton: { borderRadius: 18, overflow: 'hidden', shadowColor: '#E8475E', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 8 },
+  buttonRow: { flexDirection: 'row', gap: 12 },
+  skipButton: { flex: 1, paddingVertical: 18, alignItems: 'center', borderRadius: 18, borderWidth: 1.5, borderColor: '#F0EDEF', backgroundColor: '#FFFFFF' },
+  skipButtonText: { fontSize: 17, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#6B6B7B' },
+  primaryButton: { flex: 1, borderRadius: 18, overflow: 'hidden', shadowColor: '#E8475E', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 8 },
   primaryButtonDisabled: { shadowOpacity: 0 },
   primaryButtonGradient: { paddingVertical: 18, alignItems: 'center', borderRadius: 18 },
   primaryButtonText: { fontSize: 17, fontFamily: 'PlusJakartaSans_700Bold', color: '#FFFFFF' },
