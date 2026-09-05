@@ -1,12 +1,9 @@
-import { db } from './client.js'
+import { db, client } from './client.js'
 import {
   users,
   profiles,
   userPhotos,
   userInterests,
-  matches,
-  conversations,
-  messages,
   relationships,
   dailyCheckins,
   sharedGoals,
@@ -17,9 +14,11 @@ import bcrypt from 'bcryptjs'
 async function seed() {
   console.log('🌱 Starting Vow database seed on Neon Postgres...')
 
-  const passwordHash = await bcrypt.hash('password123', 10)
+  const passwordHash = await bcrypt.hash('password123', 6)
+  console.log('🔑 Password hash generated.')
 
   // 1. Create Couple Demo Users (Adam & Sarah)
+  console.log('👤 Inserting Adam & Sarah...')
   const [adamUser] = await db
     .insert(users)
     .values({
@@ -27,29 +26,36 @@ async function seed() {
       passwordHash,
       relationshipStatus: 'coupled',
     })
+    .onConflictDoUpdate({
+      target: users.email,
+      set: { relationshipStatus: 'coupled' },
+    })
     .returning()
 
-  await db.insert(profiles).values({
-    userId: adamUser.id,
-    firstName: 'Adam',
-    lastName: 'Donoghue',
-    age: 27,
-    city: 'Cape Town, SA',
-    gender: 'Man',
-    bio: 'Product builder, coffee enthusiast, and lover of coastal hikes. Believer in intentional relationships.',
-    lookingFor: 'Long-term relationship',
-    vouchRating: 98,
-    isVerified: true,
-  })
+  await db
+    .insert(profiles)
+    .values({
+      userId: adamUser.id,
+      firstName: 'Adam',
+      lastName: 'Donoghue',
+      age: 27,
+      city: 'Cape Town, SA',
+      gender: 'Man',
+      bio: 'Product builder, coffee enthusiast, and lover of coastal hikes. Believer in intentional relationships.',
+      lookingFor: 'Long-term relationship',
+      vouchRating: 98,
+      isVerified: true,
+    })
+    .onConflictDoNothing()
 
-  await db.insert(userPhotos).values([
-    {
+  await db
+    .insert(userPhotos)
+    .values({
       userId: adamUser.id,
       url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&q=80',
       orderIndex: 0,
       isPrimary: true,
-    },
-  ])
+    })
 
   await db.insert(userInterests).values([
     { userId: adamUser.id, interest: '☕ Coffee' },
@@ -64,31 +70,39 @@ async function seed() {
       passwordHash,
       relationshipStatus: 'coupled',
     })
+    .onConflictDoUpdate({
+      target: users.email,
+      set: { relationshipStatus: 'coupled' },
+    })
     .returning()
 
-  await db.insert(profiles).values({
-    userId: sarahUser.id,
-    firstName: 'Sarah',
-    lastName: 'Miller',
-    age: 26,
-    city: 'Cape Town, SA',
-    gender: 'Woman',
-    bio: 'Architect & weekend painter. Always planning our next road trip and perfecting homemade pasta.',
-    lookingFor: 'Long-term relationship',
-    vouchRating: 99,
-    isVerified: true,
-  })
+  await db
+    .insert(profiles)
+    .values({
+      userId: sarahUser.id,
+      firstName: 'Sarah',
+      lastName: 'Miller',
+      age: 26,
+      city: 'Cape Town, SA',
+      gender: 'Woman',
+      bio: 'Architect & weekend painter. Always planning our next road trip and perfecting homemade pasta.',
+      lookingFor: 'Long-term relationship',
+      vouchRating: 99,
+      isVerified: true,
+    })
+    .onConflictDoNothing()
 
-  await db.insert(userPhotos).values([
-    {
+  await db
+    .insert(userPhotos)
+    .values({
       userId: sarahUser.id,
       url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80',
       orderIndex: 0,
       isPrimary: true,
-    },
-  ])
+    })
 
   // 2. Create Active Relationship between Adam & Sarah
+  console.log('💍 Creating Adam & Sarah relationship...')
   const [coupleRel] = await db
     .insert(relationships)
     .values({
@@ -101,6 +115,7 @@ async function seed() {
     .returning()
 
   // 3. Couple Daily Check-ins (Double-Blind Demo)
+  console.log('📝 Creating daily check-ins...')
   const today = new Date().toISOString().split('T')[0]
   await db.insert(dailyCheckins).values([
     {
@@ -126,6 +141,7 @@ async function seed() {
   ])
 
   // 4. Shared Goals & Vows
+  console.log('🎯 Creating shared goals...')
   await db.insert(sharedGoals).values([
     {
       relationshipId: coupleRel.id,
@@ -145,6 +161,7 @@ async function seed() {
   ])
 
   // 5. Timeline Milestones
+  console.log('📖 Creating timeline milestones...')
   await db.insert(timelineMilestones).values([
     {
       relationshipId: coupleRel.id,
@@ -163,6 +180,7 @@ async function seed() {
   ])
 
   // 6. Seed Singles for Discovery Mode
+  console.log('💘 Creating singles for discovery...')
   const singlesData = [
     {
       name: 'Elena',
@@ -198,27 +216,36 @@ async function seed() {
         passwordHash,
         relationshipStatus: 'single',
       })
+      .onConflictDoUpdate({
+        target: users.email,
+        set: { relationshipStatus: 'single' },
+      })
       .returning()
 
-    await db.insert(profiles).values({
-      userId: singleUser.id,
-      firstName: s.name,
-      lastName: 'Vow',
-      age: s.age,
-      city: s.city,
-      gender: 'Woman',
-      bio: s.bio,
-      lookingFor: 'Long-term relationship',
-      vouchRating: 95,
-      isVerified: true,
-    })
+    await db
+      .insert(profiles)
+      .values({
+        userId: singleUser.id,
+        firstName: s.name,
+        lastName: 'Vow',
+        age: s.age,
+        city: s.city,
+        gender: 'Woman',
+        bio: s.bio,
+        lookingFor: 'Long-term relationship',
+        vouchRating: 95,
+        isVerified: true,
+      })
+      .onConflictDoNothing()
 
-    await db.insert(userPhotos).values({
-      userId: singleUser.id,
-      url: s.photo,
-      orderIndex: 0,
-      isPrimary: true,
-    })
+    await db
+      .insert(userPhotos)
+      .values({
+        userId: singleUser.id,
+        url: s.photo,
+        orderIndex: 0,
+        isPrimary: true,
+      })
 
     for (const interest of s.interests) {
       await db.insert(userInterests).values({
@@ -229,6 +256,7 @@ async function seed() {
   }
 
   console.log('✅ Neon Postgres database successfully seeded with Vow mock data!')
+  await client.end()
   process.exit(0)
 }
 

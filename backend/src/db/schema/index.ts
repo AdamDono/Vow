@@ -172,6 +172,13 @@ export const userPhotosRelations = relations(userPhotos, ({ one }) => ({
   }),
 }))
 
+export const userInterestsRelations = relations(userInterests, ({ one }) => ({
+  user: one(users, {
+    fields: [userInterests.userId],
+    references: [users.id],
+  }),
+}))
+
 export const conversationsRelations = relations(conversations, ({ many }) => ({
   messages: many(messages),
 }))
@@ -201,4 +208,29 @@ export const relationshipsRelations = relations(relationships, ({ one, many }) =
   checkins: many(dailyCheckins),
   goals: many(sharedGoals),
   milestones: many(timelineMilestones),
+}))
+
+export const dailyCheckinsRelations = relations(dailyCheckins, ({ one }) => ({
+  relationship: one(relationships, {
+    fields: [dailyCheckins.relationshipId],
+    references: [relationships.id],
+  }),
+  user: one(users, {
+    fields: [dailyCheckins.userId],
+    references: [users.id],
+  }),
+}))
+
+export const sharedGoalsRelations = relations(sharedGoals, ({ one }) => ({
+  relationship: one(relationships, {
+    fields: [sharedGoals.relationshipId],
+    references: [relationships.id],
+  }),
+}))
+
+export const timelineMilestonesRelations = relations(timelineMilestones, ({ one }) => ({
+  relationship: one(relationships, {
+    fields: [timelineMilestones.relationshipId],
+    references: [relationships.id],
+  }),
 }))

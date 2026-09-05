@@ -1,19 +1,52 @@
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { useState } from 'react'
+import { api, setAuthToken } from '../../lib/api'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const handleLogin = async () => {
+  const handleLogin = async (overrideEmail?: string, overridePassword?: string) => {
+    const loginEmail = overrideEmail || email
+    const loginPass = overridePassword || password
+
+    if (!loginEmail || !loginPass) {
+      setErrorMessage('Please enter your email and password')
+      return
+    }
+
     setLoading(true)
-    // TODO: Supabase auth.signInWithPassword
-    // On success: router.replace('/(single)/discover')
-    // On couple: router.replace('/(couple)/dashboard')
-    setLoading(false)
+    setErrorMessage(null)
+
+    try {
+      const res = await api.auth.login({
+        email: loginEmail.trim().toLowerCase(),
+        password: loginPass,
+      })
+
+      if (res.token) {
+        setAuthToken(res.token)
+        if (res.user?.relationshipStatus === 'coupled') {
+          router.replace('/(couple)/dashboard')
+        } else {
+          router.replace('/(single)/discover')
+        }
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to sign in. Please check your credentials.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const quickLogin = (demoEmail: string) => {
+    setEmail(demoEmail)
+    setPassword('password123')
+    handleLogin(demoEmail, 'password123')
   }
 
   return (
@@ -34,6 +67,32 @@ export default function LoginScreen() {
           <Text style={styles.subtitle}>Sign in to continue your journey</Text>
         </View>
 
+        {/* Demo Fast Login Pills */}
+        <View style={styles.demoSection}>
+          <Text style={styles.demoTitle}>⚡ Quick Demo Sign-In (Neon DB):</Text>
+          <View style={styles.demoPillRow}>
+            <Pressable
+              style={styles.demoPill}
+              onPress={() => quickLogin('adam@vow.app')}
+            >
+              <Text style={styles.demoPillText}>💍 Adam (Couples Mode)</Text>
+            </Pressable>
+            <Pressable
+              style={styles.demoPill}
+              onPress={() => quickLogin('elena@vow.app')}
+            >
+              <Text style={styles.demoPillText}>💘 Elena (Single Mode)</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Error banner */}
+        {errorMessage && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          </View>
+        )}
+
         {/* Form */}
         <View style={styles.form}>
           <View style={styles.inputGroup}>
@@ -43,7 +102,10 @@ export default function LoginScreen() {
               placeholder="you@example.com"
               placeholderTextColor="#A0A0B0"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(t) => {
+                setEmail(t)
+                setErrorMessage(null)
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -57,7 +119,10 @@ export default function LoginScreen() {
               placeholder="Your password"
               placeholderTextColor="#A0A0B0"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(t) => {
+                setPassword(t)
+                setErrorMessage(null)
+              }}
               secureTextEntry
             />
           </View>
@@ -69,7 +134,7 @@ export default function LoginScreen() {
           {/* Sign In Button */}
           <Pressable
             style={({ pressed }) => [styles.primaryButton, pressed && { opacity: 0.9 }]}
-            onPress={handleLogin}
+            onPress={() => handleLogin()}
             disabled={loading}
           >
             <LinearGradient
@@ -78,9 +143,11 @@ export default function LoginScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.primaryButtonGradient}
             >
-              <Text style={styles.primaryButtonText}>
-                {loading ? 'Signing in...' : 'Sign In'}
-              </Text>
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Sign In</Text>
+              )}
             </LinearGradient>
           </Pressable>
 
@@ -114,12 +181,19 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFBF9' },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 70, paddingBottom: 40 },
-  header: { marginBottom: 40 },
-  backButton: { marginBottom: 24, width: 44, height: 44, borderRadius: 12, backgroundColor: '#FFF0ED', alignItems: 'center', justifyContent: 'center' },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 60, paddingBottom: 40 },
+  header: { marginBottom: 24 },
+  backButton: { marginBottom: 20, width: 44, height: 44, borderRadius: 12, backgroundColor: '#FFF0ED', alignItems: 'center', justifyContent: 'center' },
   backText: { fontSize: 20, color: '#1A1A2E' },
   title: { fontSize: 34, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E', letterSpacing: -0.8, marginBottom: 8 },
   subtitle: { fontSize: 16, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B6B7B' },
+  demoSection: { backgroundColor: '#F0E6FF', borderRadius: 16, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#E8D0D5' },
+  demoTitle: { fontSize: 12, fontFamily: 'PlusJakartaSans_700Bold', color: '#6B3FA0', marginBottom: 8 },
+  demoPillRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  demoPill: { backgroundColor: '#FFFFFF', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#C9A0F4' },
+  demoPillText: { fontSize: 12, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#1A1A2E' },
+  errorBox: { backgroundColor: '#FEE2E2', borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#F87171' },
+  errorText: { fontSize: 14, fontFamily: 'PlusJakartaSans_500Medium', color: '#991B1B', textAlign: 'center' },
   form: { gap: 4 },
   inputGroup: { marginBottom: 16 },
   label: { fontSize: 14, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#1A1A2E', marginBottom: 8 },
@@ -129,12 +203,12 @@ const styles = StyleSheet.create({
   primaryButton: { borderRadius: 18, overflow: 'hidden', shadowColor: '#E8475E', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 8 },
   primaryButtonGradient: { paddingVertical: 18, alignItems: 'center', borderRadius: 18 },
   primaryButtonText: { fontSize: 17, fontFamily: 'PlusJakartaSans_700Bold', color: '#FFFFFF' },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 24 },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 20 },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#F0EDEF' },
   dividerText: { fontSize: 14, fontFamily: 'PlusJakartaSans_400Regular', color: '#A0A0B0' },
   socialButton: { backgroundColor: '#FFFFFF', borderRadius: 14, paddingVertical: 16, alignItems: 'center', borderWidth: 1.5, borderColor: '#F0EDEF' },
   socialButtonText: { fontSize: 16, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#1A1A2E' },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 32 },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
   footerText: { fontSize: 15, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B6B7B' },
   footerLink: { fontSize: 15, fontFamily: 'PlusJakartaSans_700Bold', color: '#E8475E' },
 })

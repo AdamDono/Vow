@@ -1,19 +1,47 @@
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { useState } from 'react'
+import { api, setAuthToken } from '../../lib/api'
 
 export default function SignupScreen() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleSignup = async () => {
+    if (!name.trim() || !email.trim() || !password) {
+      setErrorMessage('Please fill in your name, email, and password.')
+      return
+    }
+
+    if (password.length < 6) {
+      setErrorMessage('Password must be at least 6 characters.')
+      return
+    }
+
     setLoading(true)
-    // TODO: Supabase auth.signUp then push to onboarding
-    // router.push('/(auth)/onboarding/basics')
-    setLoading(false)
+    setErrorMessage(null)
+
+    try {
+      const res = await api.auth.signup({
+        firstName: name.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        age: 25,
+      })
+
+      if (res.token) {
+        setAuthToken(res.token)
+        router.push('/(auth)/onboarding/basics')
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Could not create account. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -30,6 +58,12 @@ export default function SignupScreen() {
           <Text style={styles.subtitle}>Start your journey to real love</Text>
         </View>
 
+        {errorMessage && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          </View>
+        )}
+
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>First Name</Text>
@@ -38,7 +72,10 @@ export default function SignupScreen() {
               placeholder="Your first name"
               placeholderTextColor="#A0A0B0"
               value={name}
-              onChangeText={setName}
+              onChangeText={(t) => {
+                setName(t)
+                setErrorMessage(null)
+              }}
               autoCapitalize="words"
             />
           </View>
@@ -50,7 +87,10 @@ export default function SignupScreen() {
               placeholder="you@example.com"
               placeholderTextColor="#A0A0B0"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(t) => {
+                setEmail(t)
+                setErrorMessage(null)
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -61,10 +101,13 @@ export default function SignupScreen() {
             <Text style={styles.label}>Password</Text>
             <TextInput
               style={styles.input}
-              placeholder="At least 8 characters"
+              placeholder="At least 6 characters"
               placeholderTextColor="#A0A0B0"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(t) => {
+                setPassword(t)
+                setErrorMessage(null)
+              }}
               secureTextEntry
             />
           </View>
@@ -80,9 +123,11 @@ export default function SignupScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.primaryButtonGradient}
             >
-              <Text style={styles.primaryButtonText}>
-                {loading ? 'Creating account...' : 'Continue'}
-              </Text>
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Create Account</Text>
+              )}
             </LinearGradient>
           </Pressable>
 
@@ -113,12 +158,14 @@ export default function SignupScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFBF9' },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 70, paddingBottom: 40 },
-  header: { marginBottom: 40 },
-  backButton: { marginBottom: 24, width: 44, height: 44, borderRadius: 12, backgroundColor: '#FFF0ED', alignItems: 'center', justifyContent: 'center' },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 60, paddingBottom: 40 },
+  header: { marginBottom: 28 },
+  backButton: { marginBottom: 20, width: 44, height: 44, borderRadius: 12, backgroundColor: '#FFF0ED', alignItems: 'center', justifyContent: 'center' },
   backText: { fontSize: 20, color: '#1A1A2E' },
   title: { fontSize: 34, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E', letterSpacing: -0.8, marginBottom: 8, lineHeight: 42 },
   subtitle: { fontSize: 16, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B6B7B' },
+  errorBox: { backgroundColor: '#FEE2E2', borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#F87171' },
+  errorText: { fontSize: 14, fontFamily: 'PlusJakartaSans_500Medium', color: '#991B1B', textAlign: 'center' },
   form: { gap: 4 },
   inputGroup: { marginBottom: 16 },
   label: { fontSize: 14, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#1A1A2E', marginBottom: 8 },
@@ -126,12 +173,12 @@ const styles = StyleSheet.create({
   primaryButton: { borderRadius: 18, overflow: 'hidden', marginTop: 8, shadowColor: '#E8475E', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 8 },
   primaryButtonGradient: { paddingVertical: 18, alignItems: 'center', borderRadius: 18 },
   primaryButtonText: { fontSize: 17, fontFamily: 'PlusJakartaSans_700Bold', color: '#FFFFFF' },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 24 },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 20 },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#F0EDEF' },
   dividerText: { fontSize: 14, fontFamily: 'PlusJakartaSans_400Regular', color: '#A0A0B0' },
   socialButton: { backgroundColor: '#FFFFFF', borderRadius: 14, paddingVertical: 16, alignItems: 'center', borderWidth: 1.5, borderColor: '#F0EDEF' },
   socialButtonText: { fontSize: 16, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#1A1A2E' },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 32 },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
   footerText: { fontSize: 15, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B6B7B' },
   footerLink: { fontSize: 15, fontFamily: 'PlusJakartaSans_700Bold', color: '#E8475E' },
 })
