@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import { useState, useEffect } from 'react'
 import * as Location from 'expo-location'
+import * as ImagePicker from 'expo-image-picker'
 import { api } from '../../../lib/api'
 
 const GENDERS = ['Man', 'Woman', 'Non-binary', 'Prefer not to say']
@@ -29,17 +30,20 @@ const ALL_INTERESTS = [
   { emoji: '🚴', label: 'Cycling' }, { emoji: '🌙', label: 'Astrology' },
 ]
 
+const MAX_PHOTOS = 6
 const MAX_INTERESTS = 5
 const MAX_BIO_CHARS = 300
 
 export default function EditProfileScreen() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null)
   const [detectingLocation, setDetectingLocation] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // Profile Form States
+  const [photos, setPhotos] = useState<string[]>([])
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [age, setAge] = useState('')
@@ -65,6 +69,10 @@ export default function EditProfileScreen() {
           if (p.lookingFor) setLookingFor(p.lookingFor)
           if (p.bio) setBio(p.bio)
 
+          if (Array.isArray(res.user.photos) && res.user.photos.length > 0) {
+            setPhotos(res.user.photos.map((ph: any) => typeof ph === 'string' ? ph : ph.url))
+          }
+
           if (Array.isArray(res.user.interests) && res.user.interests.length > 0) {
             setSelectedInterests(
               res.user.interests.map((i: any) => typeof i === 'string' ? i : i.interest)
@@ -80,6 +88,60 @@ export default function EditProfileScreen() {
     }
     loadData()
   }, [])
+
+  const pickAndUploadPhoto = async (targetIndex?: number) => {
+    try {
+      setErrorMessage(null)
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+      if (status !== 'granted') {
+        setErrorMessage('Camera roll permission is required to upload photos.')
+        return
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [3, 4],
+        quality: 0.8,
+        base64: true,
+      })
+
+      if (result.canceled || !result.assets || !result.assets[0]) return
+
+      const asset = result.assets[0]
+      const indexToSet = typeof targetIndex === 'number' ? targetIndex : photos.length
+      setUploadingIndex(indexToSet)
+
+      let uploadedUrl = asset.uri
+      if (asset.base64) {
+        const mime = asset.mimeType || 'image/jpeg'
+        const base64Data = `data:${mime};base64,${asset.base64}`
+        const uploadRes = await api.upload.photo(base64Data)
+        if (uploadRes?.url) {
+          uploadedUrl = uploadRes.url
+        }
+      }
+
+      setPhotos((prev) => {
+        const next = [...prev]
+        if (indexToSet < next.length) {
+          next[indexToSet] = uploadedUrl
+        } else {
+          next.push(uploadedUrl)
+        }
+        return next.slice(0, MAX_PHOTOS)
+      })
+    } catch (err: any) {
+      console.error('Photo upload failed:', err)
+      setErrorMessage(err.message || 'Failed to upload photo.')
+    } finally {
+      setUploadingIndex(null)
+    }
+  }
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index))
+  }
 
   const detectLocation = async () => {
     setDetectingLocation(true)
@@ -134,6 +196,7 @@ export default function EditProfileScreen() {
         lookingFor,
         bio: bio.trim(),
         interests: selectedInterests,
+        photos,
       }
 
       const res = await api.auth.updateProfile(payload)
@@ -152,6 +215,8 @@ export default function EditProfileScreen() {
       setSaving(false)
     }
   }
+
+  const photoSlots = Array.from({ length: MAX_PHOTOS }, (_, i) => photos[i] ?? null)
 
   if (loading) {
     return (
@@ -179,7 +244,7 @@ export default function EditProfileScreen() {
           </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>Edit Profile</Text>
-            <Text style={styles.subtitle}>Update your bio, intent & preferences</Text>
+            <Text style={styles.subtitle}>Update your photos, bio & preferences</Text>
           </View>
         </View>
 
@@ -197,6 +262,55 @@ export default function EditProfileScreen() {
             <Text style={styles.successText}>{successMessage}</Text>
           </View>
         )}
+
+        {/* Section 0: Photos Gallery */}
+        <View style={styles.sectionCard}>
+          <View style={styles.photoHeaderRow}>
+            <Text style={styles.cardHeader}>📸 Profile Photos</Text>
+            <Text style={styles.counterText}>{photos.length}/{MAX_PHOTOS}</Text>
+          </View>
+          <Text style={styles.cardSub}>Tap any slot to upload from your camera roll. First slot is your main card.</Text>
+
+          <View style={styles.photoGrid}>
+            {photoSlots.map((uri, index) => {
+              const isSlotUploading = uploadingIndex === index
+              return (
+                <Pressable
+                  key={index}
+                  style={[styles.photoSlot, index === 0 && styles.photoSlotMain]}
+                  onPress={() => !isSlotUploading && pickAndUploadPhoto(uri ? index : undefined)}
+                >
+                  {isSlotUploading ? (
+                    <View style={styles.uploadingBox}>
+                      <ActivityIndicator size="small" color="#E8475E" />
+                      <Text style={styles.uploadingText}>Uploading...</Text>
+                    </View>
+                  ) : uri ? (
+                    <>
+                      <Image source={{ uri }} style={styles.photoImage} resizeMode="cover" />
+                      <Pressable style={styles.removeButton} onPress={() => removePhoto(index)}>
+                        <Text style={styles.removeButtonText}>✕</Text>
+                      </Pressable>
+                      {index === 0 && (
+                        <View style={styles.mainBadge}>
+                          <Text style={styles.mainBadgeText}>Main</Text>
+                        </View>
+                      )}
+                      <View style={styles.changeOverlay}>
+                        <Text style={styles.changeText}>Change</Text>
+                      </View>
+                    </>
+                  ) : (
+                    <View style={styles.emptySlot}>
+                      <Text style={styles.plusIcon}>+</Text>
+                      {index === 0 && <Text style={styles.emptySlotHint}>Main photo</Text>}
+                    </View>
+                  )}
+                </Pressable>
+              )
+            })}
+          </View>
+        </View>
 
         {/* Section 1: Basic Info */}
         <View style={styles.sectionCard}>
@@ -421,6 +535,22 @@ const styles = StyleSheet.create({
   successBox: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#ECFDF5', borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#A7F3D0' },
   successText: { flex: 1, fontSize: 14, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#059669' },
   sectionCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, marginBottom: 18, borderWidth: 1, borderColor: '#F0EDEF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
+  photoHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
+  photoSlot: { width: '31%', aspectRatio: 3 / 4, borderRadius: 16, overflow: 'hidden', backgroundColor: '#FFF0ED', borderWidth: 1.5, borderColor: '#F0EDEF' },
+  photoSlotMain: { width: '64.5%' },
+  photoImage: { width: '100%', height: '100%' },
+  emptySlot: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  plusIcon: { fontSize: 28, color: '#E8475E', lineHeight: 32 },
+  emptySlotHint: { fontSize: 11, fontFamily: 'PlusJakartaSans_500Medium', color: '#A0A0B0' },
+  uploadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#FFF0ED' },
+  uploadingText: { fontSize: 11, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#E8475E' },
+  removeButton: { position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', zIndex: 10 },
+  removeButtonText: { fontSize: 13, color: '#FFFFFF', fontFamily: 'PlusJakartaSans_700Bold' },
+  mainBadge: { position: 'absolute', bottom: 8, left: 8, backgroundColor: '#E8475E', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, zIndex: 10 },
+  mainBadgeText: { fontSize: 11, fontFamily: 'PlusJakartaSans_700Bold', color: '#FFFFFF' },
+  changeOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.4)', paddingVertical: 4, alignItems: 'center' },
+  changeText: { color: '#FFFFFF', fontSize: 10, fontFamily: 'PlusJakartaSans_500Medium' },
   cardHeader: { fontSize: 17, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E', marginBottom: 4 },
   cardSub: { fontSize: 13, fontFamily: 'PlusJakartaSans_400Regular', color: '#8E8E9E', marginBottom: 14 },
   rowInputs: { flexDirection: 'row', gap: 12 },

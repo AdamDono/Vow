@@ -49,6 +49,15 @@ export const api = {
     me: () => apiRequest<any>('/api/auth/me'),
   },
 
+  // Upload (Cloudinary / CDN)
+  upload: {
+    photo: (base64OrDataUri: string) =>
+      apiRequest<{ success: boolean; url: string; provider?: string }>('/api/upload', {
+        method: 'POST',
+        body: JSON.stringify({ image: base64OrDataUri }),
+      }),
+  },
+
   // Singles Mode
   singles: {
     getFeed: () => apiRequest<{ feed: any[] }>('/api/singles/feed'),

@@ -8,6 +8,8 @@ import { singlesRouter } from './routes/singles.js'
 import { couplesRouter } from './routes/couples.js'
 import { proposalsRouter } from './routes/proposals.js'
 import { chatRouter } from './routes/chat.js'
+import { uploadRouter } from './routes/upload.js'
+import { serveStatic } from '@hono/node-server/serve-static'
 
 dotenv.config()
 
@@ -23,6 +25,9 @@ app.use(
     allowHeaders: ['Content-Type', 'Authorization'],
   })
 )
+
+// Serve local uploaded images statically
+app.use('/uploads/*', serveStatic({ root: './' }))
 
 // Healthcheck
 app.get('/health', (c) => {
@@ -41,6 +46,7 @@ app.get('/', (c) => {
     docs: {
       health: '/health',
       auth: '/api/auth',
+      upload: '/api/upload',
       singles: '/api/singles',
       couples: '/api/couples',
       proposals: '/api/proposals',
@@ -51,6 +57,7 @@ app.get('/', (c) => {
 
 // Mount routers
 app.route('/api/auth', authRouter)
+app.route('/api/upload', uploadRouter)
 app.route('/api/singles', singlesRouter)
 app.route('/api/couples', couplesRouter)
 app.route('/api/proposals', proposalsRouter)

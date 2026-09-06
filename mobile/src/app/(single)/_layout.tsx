@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router'
-import { View, StyleSheet, Pressable } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
 function TabIcon({ name, focused }: { name: any; focused: boolean }) {
@@ -23,19 +23,45 @@ export default function SingleLayout() {
     >
       <Tabs.Screen
         name="discover"
-        options={{ tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} /> }}
+        options={{
+          title: 'Discover',
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />,
+        }}
       />
       <Tabs.Screen
         name="likes"
-        options={{ tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'heart' : 'heart-outline'} focused={focused} /> }}
+        options={{
+          title: 'Likes',
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'heart' : 'heart-outline'} focused={focused} />,
+        }}
       />
       <Tabs.Screen
         name="matches"
-        options={{ tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'chatbubbles' : 'chatbubbles-outline'} focused={focused} /> }}
+        options={{
+          title: 'Matches',
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'chatbubbles' : 'chatbubbles-outline'} focused={focused} />,
+        }}
       />
       <Tabs.Screen
-        name="profile"
-        options={{ tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} /> }}
+        name="profile/index"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />,
+        }}
+      />
+
+      {/* Hidden nested screens (do NOT show as tabs) */}
+      <Tabs.Screen
+        name="profile/edit"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          href: null,
+        }}
       />
     </Tabs>
   )

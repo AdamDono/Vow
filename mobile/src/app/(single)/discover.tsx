@@ -201,7 +201,7 @@ export default function DiscoverScreen() {
                 style={styles.modalButton}
                 onPress={() => {
                   setMatchModal(null)
-                  router.push('/(single)/chat')
+                  router.push('/(single)/matches')
                 }}
               >
                 <Text style={styles.modalButtonText}>Send a Message</Text>
