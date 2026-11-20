@@ -70,12 +70,6 @@ export default function LoginScreen() {
     }
   }
 
-  const quickLogin = (demoEmail: string) => {
-    setEmail(demoEmail)
-    setPassword('password123')
-    handleLogin(demoEmail, 'password123')
-  }
-
   // Real Google OAuth via Neon Auth
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true)
@@ -178,25 +172,6 @@ export default function LoginScreen() {
           </Pressable>
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>Sign in to continue your journey</Text>
-        </View>
-
-        {/* Demo Fast Login Pills */}
-        <View style={styles.demoSection}>
-          <Text style={styles.demoTitle}>⚡ Quick Demo Sign-In (Neon DB):</Text>
-          <View style={styles.demoPillRow}>
-            <Pressable
-              style={styles.demoPill}
-              onPress={() => quickLogin('adam@vow.app')}
-            >
-              <Text style={styles.demoPillText}>💍 Adam (Couples Mode)</Text>
-            </Pressable>
-            <Pressable
-              style={styles.demoPill}
-              onPress={() => quickLogin('elena@vow.app')}
-            >
-              <Text style={styles.demoPillText}>💘 Elena (Single Mode)</Text>
-            </Pressable>
-          </View>
         </View>
 
         {/* Error banner */}
@@ -322,11 +297,6 @@ const styles = StyleSheet.create({
   backText: { fontSize: 20, color: '#1A1A2E' },
   title: { fontSize: 34, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E', letterSpacing: -0.8, marginBottom: 8 },
   subtitle: { fontSize: 16, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B6B7B' },
-  demoSection: { backgroundColor: '#F0E6FF', borderRadius: 16, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#E8D0D5' },
-  demoTitle: { fontSize: 12, fontFamily: 'PlusJakartaSans_700Bold', color: '#6B3FA0', marginBottom: 8 },
-  demoPillRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  demoPill: { backgroundColor: '#FFFFFF', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#C9A0F4' },
-  demoPillText: { fontSize: 12, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#1A1A2E' },
   errorBox: { backgroundColor: '#FEE2E2', borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#F87171' },
   errorText: { fontSize: 14, fontFamily: 'PlusJakartaSans_500Medium', color: '#991B1B', textAlign: 'center' },
   form: { gap: 4 },

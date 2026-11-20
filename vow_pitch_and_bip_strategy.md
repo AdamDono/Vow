@@ -143,3 +143,10 @@ Keep these under 60 seconds, fast-paced, and hook-heavy.
 3. **The Coding Hack (15-30s):**
    * *Visual:* Time-lapse coding the reanimated swipe deck physics.
    * *Audio/Text:* Quick breakdown of how Expo and Reanimated allow you to build native animations with standard JS.
+
+---
+
+## PART 3: Master Social Posts Ready to Copy & Paste
+
+The complete formatted copy for **Post #1, Post #2, and Post #3** (with LinkedIn, X/Twitter thread, and video scripts) is maintained in:
+👉 [docs/BUILD_IN_PUBLIC_POSTS.md](file:///Users/dam1mac89/Desktop/Vow%20/docs/BUILD_IN_PUBLIC_POSTS.md)

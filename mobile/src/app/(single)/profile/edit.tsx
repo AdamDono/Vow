@@ -5,7 +5,7 @@ import { router } from 'expo-router'
 import { useState, useEffect } from 'react'
 import * as Location from 'expo-location'
 import * as ImagePicker from 'expo-image-picker'
-import { api } from '../../../lib/api'
+import { api, setAuthToken, getAuthToken } from '../../../lib/api'
 
 const GENDERS = ['Man', 'Woman', 'Non-binary', 'Prefer not to say']
 
@@ -57,7 +57,15 @@ export default function EditProfileScreen() {
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await api.auth.me()
+        let res = await api.auth.me().catch(() => null)
+        if (!res?.user) {
+          const syncRes = await api.auth.neonSync().catch(() => null)
+          if (syncRes?.token) {
+            setAuthToken(syncRes.token)
+            res = await api.auth.me().catch(() => null)
+          }
+        }
+
         if (res?.user) {
           setEmail(res.user.email || '')
           const p = res.user.profile || {}
@@ -141,6 +149,16 @@ export default function EditProfileScreen() {
 
   const removePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const makePrimary = (index: number) => {
+    if (index === 0) return
+    setPhotos((prev) => {
+      const copy = [...prev]
+      const [item] = copy.splice(index, 1)
+      copy.unshift(item)
+      return copy
+    })
   }
 
   const detectLocation = async () => {
@@ -291,10 +309,14 @@ export default function EditProfileScreen() {
                       <Pressable style={styles.removeButton} onPress={() => removePhoto(index)}>
                         <Text style={styles.removeButtonText}>✕</Text>
                       </Pressable>
-                      {index === 0 && (
+                      {index === 0 ? (
                         <View style={styles.mainBadge}>
-                          <Text style={styles.mainBadgeText}>Main</Text>
+                          <Text style={styles.mainBadgeText}>★ Main</Text>
                         </View>
+                      ) : (
+                        <Pressable style={styles.makeMainBtn} onPress={() => makePrimary(index)}>
+                          <Text style={styles.makeMainBtnText}>Make Main</Text>
+                        </Pressable>
                       )}
                       <View style={styles.changeOverlay}>
                         <Text style={styles.changeText}>Change</Text>
@@ -549,6 +571,8 @@ const styles = StyleSheet.create({
   removeButtonText: { fontSize: 13, color: '#FFFFFF', fontFamily: 'PlusJakartaSans_700Bold' },
   mainBadge: { position: 'absolute', bottom: 8, left: 8, backgroundColor: '#E8475E', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, zIndex: 10 },
   mainBadgeText: { fontSize: 11, fontFamily: 'PlusJakartaSans_700Bold', color: '#FFFFFF' },
+  makeMainBtn: { position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, zIndex: 10 },
+  makeMainBtnText: { fontSize: 10, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#FFFFFF' },
   changeOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.4)', paddingVertical: 4, alignItems: 'center' },
   changeText: { color: '#FFFFFF', fontSize: 10, fontFamily: 'PlusJakartaSans_500Medium' },
   cardHeader: { fontSize: 17, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E', marginBottom: 4 },

@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
 import { useState, useEffect } from 'react'
-import { api } from '../../../lib/api'
+import { api, getAuthToken, setAuthToken } from '../../../lib/api'
 import { updateOnboardingData, getOnboardingData } from '../../../lib/onboardingStore'
 
 const MAX_PHOTOS = 6
@@ -51,9 +51,16 @@ export default function PhotosScreen() {
       const indexToSet = typeof targetIndex === 'number' ? targetIndex : photos.length
       setUploadingIndex(indexToSet)
 
-      // Upload via backend / Cloudinary
+      // Upload via backend / UploadThing
       let uploadedUrl = asset.uri
       if (asset.base64) {
+        const token = getAuthToken()
+        if (!token) {
+          const syncRes = await api.auth.neonSync().catch(() => null)
+          if (syncRes?.token) {
+            setAuthToken(syncRes.token)
+          }
+        }
         const mime = asset.mimeType || 'image/jpeg'
         const base64Data = `data:${mime};base64,${asset.base64}`
         const uploadRes = await api.upload.photo(base64Data)

@@ -1,23 +1,49 @@
 // Vow Mobile API Client for Backend Integration
+import { Platform } from 'react-native'
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001'
+const STORAGE_KEY = 'vow_auth_token'
 
 let authToken: string | null = null
 
-export const setAuthToken = (token: string | null) => {
-  authToken = token
+// Initialize from storage on web
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
+  try {
+    authToken = window.localStorage.getItem(STORAGE_KEY)
+  } catch (_) {}
 }
 
-export const getAuthToken = () => authToken
+export const setAuthToken = (token: string | null) => {
+  authToken = token
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    try {
+      if (token) {
+        window.localStorage.setItem(STORAGE_KEY, token)
+      } else {
+        window.localStorage.removeItem(STORAGE_KEY)
+      }
+    } catch (_) {}
+  }
+}
+
+export const getAuthToken = (): string | null => {
+  if (!authToken && Platform.OS === 'web' && typeof window !== 'undefined') {
+    try {
+      authToken = window.localStorage.getItem(STORAGE_KEY)
+    } catch (_) {}
+  }
+  return authToken
+}
 
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const token = getAuthToken()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   }
 
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -60,13 +86,41 @@ export const api = {
 
   // Singles Mode
   singles: {
-    getFeed: () => apiRequest<{ feed: any[] }>('/api/singles/feed'),
+    getFeed: (filters?: {
+      minAge?: number
+      maxAge?: number
+      city?: string
+      lookingFor?: string
+      verifiedOnly?: boolean
+      includeSwiped?: boolean
+    }) => {
+      const params = new URLSearchParams()
+      if (filters?.minAge) params.append('minAge', String(filters.minAge))
+      if (filters?.maxAge) params.append('maxAge', String(filters.maxAge))
+      if (filters?.city && filters.city !== 'All') params.append('city', filters.city)
+      if (filters?.lookingFor && filters.lookingFor !== 'All') params.append('lookingFor', filters.lookingFor)
+      if (filters?.verifiedOnly) params.append('verifiedOnly', 'true')
+      if (filters?.includeSwiped) params.append('includeSwiped', 'true')
+
+      const queryString = params.toString() ? `?${params.toString()}` : ''
+      return apiRequest<{ feed: any[] }>(`/api/singles/feed${queryString}`)
+    },
+    resetSwipes: () =>
+      apiRequest<{ success: boolean; message: string }>('/api/singles/reset-swipes', {
+        method: 'POST',
+      }),
     swipe: (targetId: string, direction: 'like' | 'pass' | 'super_like') =>
       apiRequest<{ success: boolean; isMatch: boolean; matchId: string | null }>('/api/singles/swipe', {
         method: 'POST',
         body: JSON.stringify({ targetId, direction }),
       }),
     getMatches: () => apiRequest<{ matches: any[] }>('/api/singles/matches'),
+    getLikes: () => apiRequest<{ likes: any[] }>('/api/singles/likes'),
+    unmatch: (matchId: string) =>
+      apiRequest<{ success: boolean }>('/api/singles/unmatch', {
+        method: 'POST',
+        body: JSON.stringify({ matchId }),
+      }),
   },
 
   // Couples Mode

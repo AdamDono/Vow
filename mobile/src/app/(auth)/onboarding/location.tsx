@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { useState, useEffect } from 'react'
 import * as Location from 'expo-location'
-import { api } from '../../../lib/api'
+import { api, getAuthToken, setAuthToken } from '../../../lib/api'
 import { getOnboardingData, clearOnboardingData } from '../../../lib/onboardingStore'
 
 export default function LocationScreen() {
@@ -46,6 +46,14 @@ export default function LocationScreen() {
 
     try {
       const allData = getOnboardingData()
+      const token = getAuthToken()
+      if (!token) {
+        const syncRes = await api.auth.neonSync().catch(() => null)
+        if (syncRes?.token) {
+          setAuthToken(syncRes.token)
+        }
+      }
+
       await api.auth.updateProfile({
         ...allData,
         city: city.trim(),
