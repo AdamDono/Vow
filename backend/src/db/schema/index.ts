@@ -25,6 +25,7 @@ export const profiles = pgTable('profiles', {
   lookingFor: text('looking_for'), // 'Long-term relationship', 'Marriage someday', etc.
   vouchRating: integer('vouch_rating').default(100),
   datingResumePublic: boolean('dating_resume_public').default(true),
+  discoveryActive: boolean('discovery_active').default(true).notNull(),
   isVerified: boolean('is_verified').default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -143,6 +144,24 @@ export const timelineMilestones = pgTable('timeline_milestones', {
   description: text('description'),
   eventDate: date('event_date').notNull(),
   photoUrl: text('photo_url'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+// 14. USER BLOCKS (Safety & Privacy)
+export const userBlocks = pgTable('user_blocks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  blockerId: uuid('blocker_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  blockedId: uuid('blocked_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+// 15. USER REPORTS (Trust & Safety Flags)
+export const userReports = pgTable('user_reports', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  reporterId: uuid('reporter_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  reportedId: uuid('reported_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  reason: text('reason').default('Safety concern').notNull(),
+  details: text('details'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 

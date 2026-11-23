@@ -1,9 +1,10 @@
 import { Hono } from 'hono'
 import { db } from '../db/client.js'
-import { users, profiles, userPhotos, userInterests, swipes, matches, conversations } from '../db/schema/index.js'
+import { users, profiles, userPhotos, userInterests, swipes, matches, conversations, userBlocks, userReports } from '../db/schema/index.js'
 import { eq, ne, and, or, desc } from 'drizzle-orm'
 import { authMiddleware } from '../middleware/auth.js'
 import { AppEnv } from '../types/index.js'
+import { emitToUser } from '../ws/hub.js'
 
 export const singlesRouter = new Hono<AppEnv>()
 
@@ -21,14 +22,26 @@ singlesRouter.get('/feed', async (c) => {
     const verifiedOnly = c.req.query('verifiedOnly') === 'true'
     const includeSwiped = c.req.query('includeSwiped') === 'true'
 
-    // Get IDs of users already swiped on by current user
-    let swipedTargetIds: string[] = []
-    if (!includeSwiped) {
-      const mySwipes = await db.query.swipes.findMany({
-        where: eq(swipes.swiperId, authUser.userId),
-        columns: { targetId: true },
-      })
-      swipedTargetIds = mySwipes.map((s) => s.targetId)
+    // Get IDs of users already swiped on and blocked (either direction)
+    const [mySwipes, blockRows] = await Promise.all([
+      includeSwiped
+        ? Promise.resolve([])
+        : db.query.swipes.findMany({
+            where: eq(swipes.swiperId, authUser.userId),
+            columns: { targetId: true },
+          }),
+      db.query.userBlocks.findMany({
+        where: or(
+          eq(userBlocks.blockerId, authUser.userId),
+          eq(userBlocks.blockedId, authUser.userId)
+        ),
+      }),
+    ])
+
+    const swipedTargetIds = mySwipes.map((s) => s.targetId)
+    const blockedUserIds = new Set<string>()
+    for (const b of blockRows) {
+      blockedUserIds.add(b.blockerId === authUser.userId ? b.blockedId : b.blockerId)
     }
 
     // Find single candidates
@@ -45,6 +58,9 @@ singlesRouter.get('/feed', async (c) => {
     const filtered = candidates
       .filter((cand) => cand.profile !== null)
       .filter((cand) => {
+        // Respect Discovery Visibility pause & blocks
+        if (cand.profile?.discoveryActive === false) return false
+        if (blockedUserIds.has(cand.id)) return false
         // Exclude already swiped
         if (!includeSwiped && swipedTargetIds.includes(cand.id)) {
           return false
@@ -146,6 +162,13 @@ singlesRouter.post('/swipe', async (c) => {
         await db.insert(conversations).values({
           type: 'single_match',
           matchId: newMatch.id,
+        })
+
+        // Notify the other user in real time
+        emitToUser(targetId, {
+          type: 'single:match',
+          matchId: newMatch.id,
+          partnerId: authUser.userId,
         })
       }
     }
@@ -267,6 +290,73 @@ singlesRouter.post('/unmatch', async (c) => {
       )
 
     return c.json({ success: true, message: 'Unmatched successfully' })
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Internal server error' }, 500)
+  }
+})
+
+// POST /api/singles/block — Block & optionally Report a user (persisted in DB + adjusts Trust Score)
+singlesRouter.post('/block', async (c) => {
+  try {
+    const authUser = c.get('user')
+    const { targetUserId, matchId, report, reason, details } = await c.req.json()
+
+    if (!targetUserId) {
+      return c.json({ error: 'targetUserId is required' }, 400)
+    }
+
+    // 1. Insert block if not already blocked
+    const existingBlock = await db.query.userBlocks.findFirst({
+      where: and(
+        eq(userBlocks.blockerId, authUser.userId),
+        eq(userBlocks.blockedId, targetUserId)
+      ),
+    })
+
+    if (!existingBlock) {
+      await db.insert(userBlocks).values({
+        blockerId: authUser.userId,
+        blockedId: targetUserId,
+      })
+    }
+
+    // 2. Deactivate any matches between the two users
+    await db
+      .update(matches)
+      .set({ isActive: false })
+      .where(
+        or(
+          and(eq(matches.user1Id, authUser.userId), eq(matches.user2Id, targetUserId)),
+          and(eq(matches.user1Id, targetUserId), eq(matches.user2Id, authUser.userId)),
+          ...(matchId ? [eq(matches.id, matchId)] : [])
+        )
+      )
+
+    // 3. Optionally record a safety report & lower reported user's vouchRating
+    if (report) {
+      await db.insert(userReports).values({
+        reporterId: authUser.userId,
+        reportedId: targetUserId,
+        reason: reason || 'Safety concern',
+        details: details || null,
+      })
+
+      const targetProfile = await db.query.profiles.findFirst({
+        where: eq(profiles.userId, targetUserId),
+      })
+      if (targetProfile) {
+        const nextScore = Math.max(0, (targetProfile.vouchRating ?? 100) - 10)
+        await db
+          .update(profiles)
+          .set({ vouchRating: nextScore, updatedAt: new Date() })
+          .where(eq(profiles.userId, targetUserId))
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: report ? 'User blocked and safety report submitted.' : 'User blocked.',
+    })
   } catch (err: any) {
     return c.json({ error: err.message || 'Internal server error' }, 500)
   }

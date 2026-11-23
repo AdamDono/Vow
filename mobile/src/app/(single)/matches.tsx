@@ -2,8 +2,9 @@ import { View, Text, StyleSheet, ScrollView, Image, Pressable, TextInput, Activi
 import { router, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { api, getAuthToken, setAuthToken } from '../../lib/api'
+import { subscribeWs } from '../../lib/ws'
 
 interface MatchItem {
   matchId: string
@@ -104,6 +105,25 @@ export default function MatchesScreen() {
       loadMatchesAndConversations()
     }, [loadMatchesAndConversations])
   )
+
+  // Real-time WebSocket updates for incoming Vows, new matches, and live messages
+  useEffect(() => {
+    const unsubscribe = subscribeWs((event) => {
+      if (event.type === 'proposal:accepted') {
+        router.replace('/(couple)/dashboard')
+        return
+      }
+      if (
+        event.type === 'proposal:received' ||
+        event.type === 'proposal:updated' ||
+        event.type === 'single:match' ||
+        event.type === 'chat:message'
+      ) {
+        loadMatchesAndConversations()
+      }
+    })
+    return unsubscribe
+  }, [loadMatchesAndConversations])
 
   const onRefresh = () => {
     setRefreshing(true)

@@ -1,16 +1,33 @@
 // Vow Mobile API Client for Backend Integration
 import { Platform } from 'react-native'
+import * as SecureStore from 'expo-secure-store'
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001'
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001'
 const STORAGE_KEY = 'vow_auth_token'
 
 let authToken: string | null = null
 
-// Initialize from storage on web
+// Initialize from storage on web synchronously
 if (Platform.OS === 'web' && typeof window !== 'undefined') {
   try {
     authToken = window.localStorage.getItem(STORAGE_KEY)
   } catch (_) {}
+}
+
+// Hydrate token from native SecureStore (iOS Keychain / Android Keystore) or web localStorage
+export const hydrateAuthToken = async (): Promise<string | null> => {
+  if (authToken) return authToken
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    try {
+      authToken = window.localStorage.getItem(STORAGE_KEY)
+    } catch (_) {}
+    return authToken
+  }
+  try {
+    const stored = await SecureStore.getItemAsync(STORAGE_KEY)
+    if (stored) authToken = stored
+  } catch (_) {}
+  return authToken
 }
 
 export const setAuthToken = (token: string | null) => {
@@ -23,6 +40,12 @@ export const setAuthToken = (token: string | null) => {
         window.localStorage.removeItem(STORAGE_KEY)
       }
     } catch (_) {}
+  } else {
+    if (token) {
+      SecureStore.setItemAsync(STORAGE_KEY, token).catch(() => {})
+    } else {
+      SecureStore.deleteItemAsync(STORAGE_KEY).catch(() => {})
+    }
   }
 }
 
@@ -36,7 +59,7 @@ export const getAuthToken = (): string | null => {
 }
 
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = getAuthToken()
+  const token = getAuthToken() || (await hydrateAuthToken())
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -75,7 +98,7 @@ export const api = {
     me: () => apiRequest<any>('/api/auth/me'),
   },
 
-  // Upload (Cloudinary / CDN)
+  // Upload (UploadThing / Cloudinary CDN)
   upload: {
     photo: (base64OrDataUri: string) =>
       apiRequest<{ success: boolean; url: string; provider?: string }>('/api/upload', {
@@ -98,7 +121,7 @@ export const api = {
       if (filters?.minAge) params.append('minAge', String(filters.minAge))
       if (filters?.maxAge) params.append('maxAge', String(filters.maxAge))
       if (filters?.city && filters.city !== 'All') params.append('city', filters.city)
-      if (filters?.lookingFor && filters.lookingFor !== 'All') params.append('lookingFor', filters.lookingFor)
+      if (filters?.lookingFor && filters?.lookingFor !== 'All') params.append('lookingFor', filters.lookingFor)
       if (filters?.verifiedOnly) params.append('verifiedOnly', 'true')
       if (filters?.includeSwiped) params.append('includeSwiped', 'true')
 
@@ -120,6 +143,11 @@ export const api = {
       apiRequest<{ success: boolean }>('/api/singles/unmatch', {
         method: 'POST',
         body: JSON.stringify({ matchId }),
+      }),
+    blockAndReport: (payload: { targetUserId: string; matchId?: string; report?: boolean; reason?: string; details?: string }) =>
+      apiRequest<{ success: boolean; message: string }>('/api/singles/block', {
+        method: 'POST',
+        body: JSON.stringify(payload),
       }),
   },
 
@@ -166,11 +194,19 @@ export const api = {
   // Chat
   chat: {
     getConversations: () => apiRequest<{ conversations: any[] }>('/api/chat/conversations'),
-    getMessages: (conversationId: string) => apiRequest<{ messages: any[] }>(`/api/chat/${conversationId}/messages`),
+    getMessages: (conversationId: string) => apiRequest<{ conversationId?: string; messages: any[] }>(`/api/chat/${conversationId}/messages`),
     sendMessage: (conversationId: string, text: string, mediaUrl?: string) =>
       apiRequest<{ message: any }>(`/api/chat/${conversationId}/messages`, {
         method: 'POST',
         body: JSON.stringify({ text, mediaUrl }),
       }),
+    respondDateProposal: (conversationId: string, messageId: string, status: 'accepted' | 'declined') =>
+      apiRequest<{ success: boolean; message: any }>(
+        `/api/chat/${conversationId}/date-proposal/${messageId}/respond`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ status }),
+        }
+      ),
   },
 }

@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { db, client as sqlClient } from '../db/client.js'
-import { users, profiles, userPhotos, userInterests } from '../db/schema/index.js'
+import { users, profiles, userPhotos, userInterests, userReports } from '../db/schema/index.js'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
@@ -242,20 +242,31 @@ authRouter.post('/google', async (c) => {
 // GET /api/auth/me
 authRouter.get('/me', authMiddleware, async (c) => {
   const authUser = c.get('user')
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, authUser.userId),
-    with: {
-      profile: true,
-      photos: true,
-      interests: true,
-    },
-  })
+  const [user, reports] = await Promise.all([
+    db.query.users.findFirst({
+      where: eq(users.id, authUser.userId),
+      with: {
+        profile: true,
+        photos: true,
+        interests: true,
+      },
+    }),
+    db.query.userReports.findMany({
+      where: eq(userReports.reportedId, authUser.userId),
+      columns: { id: true },
+    }),
+  ])
 
   if (!user) {
     return c.json({ error: 'User not found' }, 404)
   }
 
-  return c.json({ user })
+  return c.json({
+    user: {
+      ...user,
+      reportsCount: reports.length,
+    },
+  })
 })
 
 // PUT /api/auth/profile — Update user profile & onboarding data in real-time
@@ -263,7 +274,7 @@ authRouter.put('/profile', authMiddleware, async (c) => {
   try {
     const authUser = c.get('user')
     const body = await c.req.json()
-    const { firstName, lastName, age, gender, city, bio, lookingFor, photos, interests } = body
+    const { firstName, lastName, age, gender, city, bio, lookingFor, discoveryActive, photos, interests } = body
 
     // 1. Update or insert profiles table
     const profileUpdate: Record<string, any> = {
@@ -276,6 +287,7 @@ authRouter.put('/profile', authMiddleware, async (c) => {
     if (city !== undefined && city !== null) profileUpdate.city = String(city).trim()
     if (bio !== undefined && bio !== null) profileUpdate.bio = String(bio).trim()
     if (lookingFor !== undefined && lookingFor !== null) profileUpdate.lookingFor = String(lookingFor)
+    if (typeof discoveryActive === 'boolean') profileUpdate.discoveryActive = discoveryActive
 
     const existingProfile = await db.query.profiles.findFirst({
       where: eq(profiles.userId, authUser.userId),
@@ -372,8 +384,8 @@ authRouter.post('/neon-sync', async (c) => {
       }
     }
 
-    // 2. Fallback to latest authenticated user in neon_auth.user
-    if (!email) {
+    // 2. Dev-only fallback to latest authenticated user in neon_auth.user (blocked in production)
+    if (!email && process.env.NODE_ENV !== 'production') {
       const latestUserRows = await sqlClient`
         SELECT email, name, image 
         FROM neon_auth.user 

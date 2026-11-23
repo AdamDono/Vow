@@ -11,6 +11,7 @@ import {
 import { eq, and, or, desc } from 'drizzle-orm'
 import { authMiddleware } from '../middleware/auth.js'
 import { AppEnv } from '../types/index.js'
+import { emitToUser, emitToUsers } from '../ws/hub.js'
 
 export const proposalsRouter = new Hono<AppEnv>()
 
@@ -161,6 +162,11 @@ proposalsRouter.post('/send', async (c) => {
       })
       .returning()
 
+    emitToUser(receiverId, {
+      type: 'proposal:received',
+      invite,
+    })
+
     return c.json({
       success: true,
       message: 'Vow proposal sent! Awaiting response.',
@@ -198,6 +204,12 @@ proposalsRouter.post('/decline', async (c) => {
       .update(relationshipInvites)
       .set({ status: 'rejected', respondedAt: new Date() })
       .where(eq(relationshipInvites.id, invite.id))
+
+    emitToUsers([invite.senderId, invite.receiverId], {
+      type: 'proposal:updated',
+      inviteId: invite.id,
+      status: 'rejected',
+    })
 
     const isWithdraw = invite.senderId === authUser.userId
     return c.json({
@@ -315,6 +327,13 @@ proposalsRouter.post('/accept', async (c) => {
       title: 'Our Vow Day',
       description: 'Accepted our Vow Proposal and stepped out of the dating market together.',
       eventDate: today,
+    })
+
+    // 8. Push instant Commitment Lock event to BOTH partners over WebSockets
+    emitToUsers([invite.senderId, invite.receiverId], {
+      type: 'proposal:accepted',
+      relationshipId: relationship.id,
+      conversationId: coupleConv.id,
     })
 
     return c.json({

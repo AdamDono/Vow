@@ -28,6 +28,9 @@ export default function ProfileScreen() {
       }
       if (res?.user) {
         setUser(res.user)
+        if (typeof res.user.profile?.discoveryActive === 'boolean') {
+          setDiscoveryActive(res.user.profile.discoveryActive)
+        }
       }
     } catch (err) {
       console.warn('Could not fetch user profile:', err)
@@ -48,12 +51,23 @@ export default function ProfileScreen() {
     fetchUserProfile()
   }
 
+  const handleToggleDiscovery = async (nextVal: boolean) => {
+    setDiscoveryActive(nextVal)
+    try {
+      await api.auth.updateProfile({ discoveryActive: nextVal })
+    } catch {
+      setDiscoveryActive(!nextVal)
+    }
+  }
+
   const handleLogout = () => {
     setAuthToken(null)
     router.replace('/(auth)/login')
   }
 
   const profile = user?.profile || {}
+  const trustScore = profile.vouchRating ?? 100
+  const reportsCount = user?.reportsCount ?? 0
   const displayName = profile.firstName
     ? `${profile.firstName} ${profile.lastName || ''}`.trim()
     : user?.email?.split('@')[0] || 'Vow Member'
@@ -210,7 +224,7 @@ export default function ProfileScreen() {
         </View>
         <Pressable style={styles.historyCard} onPress={() => setTrustModalVisible(true)}>
           <View style={styles.historyItem}>
-            <Text style={styles.historyValue}>★ 100</Text>
+            <Text style={styles.historyValue}>★ {trustScore}</Text>
             <Text style={styles.historyLabel}>Trust Score</Text>
           </View>
           <View style={styles.historySep} />
@@ -220,7 +234,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.historySep} />
           <View style={styles.historyItem}>
-            <Text style={styles.historyValue}>0</Text>
+            <Text style={styles.historyValue}>{reportsCount}</Text>
             <Text style={styles.historyLabel}>Reports / Flags</Text>
           </View>
         </Pressable>
@@ -243,7 +257,7 @@ export default function ProfileScreen() {
           </View>
           <Switch
             value={discoveryActive}
-            onValueChange={setDiscoveryActive}
+            onValueChange={handleToggleDiscovery}
             trackColor={{ false: '#F0EDEF', true: '#E8475E' }}
             thumbColor="#FFFFFF"
           />
@@ -321,8 +335,10 @@ export default function ProfileScreen() {
 
               <ScrollView style={styles.trustModalScroll} showsVerticalScrollIndicator={false}>
                 <View style={styles.trustScoreBanner}>
-                  <Text style={styles.trustBannerScore}>★ 100 / 100</Text>
-                  <Text style={styles.trustBannerStatus}>Top Tier Reputation</Text>
+                  <Text style={styles.trustBannerScore}>★ {trustScore} / 100</Text>
+                  <Text style={styles.trustBannerStatus}>
+                    {trustScore >= 90 ? 'Top Tier Reputation' : trustScore >= 75 ? 'Trusted Member' : 'Under Review'}
+                  </Text>
                   <Text style={styles.trustBannerDesc}>
                     Vow maintains strict trust & safety so intentional singles can connect with complete peace of mind.
                   </Text>

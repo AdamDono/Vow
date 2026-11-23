@@ -12,6 +12,7 @@ import {
 import { eq, or, and, desc } from 'drizzle-orm'
 import { authMiddleware } from '../middleware/auth.js'
 import { AppEnv } from '../types/index.js'
+import { emitToUser } from '../ws/hub.js'
 
 export const couplesRouter = new Hono<AppEnv>()
 
@@ -242,6 +243,12 @@ couplesRouter.post('/checkin', async (c) => {
         .where(eq(relationships.id, relationship.id))
     }
 
+    emitToUser(partnerId, {
+      type: 'couple:checkin',
+      revealed: shouldUnseal,
+      harmonyScore: updatedHarmony,
+    })
+
     return c.json({
       success: true,
       checkin,
@@ -469,6 +476,11 @@ couplesRouter.post('/end', async (c) => {
           .where(eq(profiles.userId, partnerId))
       }
     }
+
+    emitToUser(partnerId, {
+      type: 'couple:ended',
+      relationshipId: relationship.id,
+    })
 
     return c.json({
       success: true,

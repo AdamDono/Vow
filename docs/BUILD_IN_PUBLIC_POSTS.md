@@ -460,6 +460,48 @@ Would you use a dating app that locks you into Couples Mode when you go exclusiv
 
 ---
 
+# ⚡ POST #7: 60fps Swipe Physics, Instant WebSockets & Real Accountability
+
+**Theme:** Making a Dating + Couples App Feel Instant and Safe for Real Beta Users.
+
+### 💼 LinkedIn Format (Tight & High-Retention)
+```markdown
+Nothing kills a social app faster than feeling sluggish or fake.
+
+So this week on **Vow**, I threw out every shortcut and made the whole experience feel instant:
+
+• **60fps Swipe Physics:** Built native drag-to-swipe cards with Reanimated + Gesture Handler — spring snap-back, dynamic LIKE/PASS stamps, and smooth next-card peek.
+• **Real-Time WebSockets:** Replaced polling with a live WebSocket hub. Messages, typing indicators, Vow proposals, and double-blind check-in unlocks now happen in milliseconds across both phones.
+• **Stateful Date Proposals:** Tapping "Accept Date 🎉" now locks the card directly in-chat as **Date Confirmed** for both people live.
+• **Real Safety & Trust:** Persisted Blocks, Safety Reports, and Discovery Pause directly to Neon Postgres — reports dynamically impact a member's Vow Trust Score.
+• **Native Keychain Auth:** Sessions now persist securely with `expo-secure-store` on iOS/Android.
+
+Next up: Facial Liveness Verification so zero catfish ever get on the deck.
+
+Question for builders 👇
+Do you ship with polling first to move fast, or wire WebSockets from day one?
+
+#BuildInPublic #ReactNative #WebSockets #ProductDesign #IndieHacker #Startups
+```
+
+### 🐦 X / Twitter Post
+```markdown
+Just killed all polling on @VowApp ⚡
+
+Shipped Milestone 7 today:
+→ 60fps Reanimated swipe cards w/ spring physics & LIKE/PASS stamps
+→ Live WebSocket hub (instant chat, typing indicators, Vow Lock & double-blind check-in reveals)
+→ In-place "Date Confirmed 🎉" proposal cards
+→ Persisted Blocks, Reports & live Trust Score impact
+→ Native SecureStore auth
+
+Next: Facial Liveness Verification 🎥
+
+#buildinpublic #reactnative #indiedev
+```
+
+---
+
 ## 📅 Roadmap Overview
 
 | Post # | Milestone Covered | Status |
@@ -470,8 +512,8 @@ Would you use a dating app that locks you into Couples Mode when you go exclusiv
 | **Post #4** | Real-time In-App Chat, Photo Lightbox & Date Proposal Engine | Ready to Publish |
 | **Post #5** | Discovery Filter Engine, Vow Trust Score & Profile Completeness | Ready to Publish |
 | **Post #6** | The Vow Proposal Lock & Couples Mode Transition | **Published** |
-| **Post #7** | 60fps Swipe Physics, WebSockets Real-Time Sync & Native Auth Hardening | *Upcoming* |
-| **Post #8** | Facial Liveness Verification & Verified Platform History | *Planned* |
+| **Post #7** | 60fps Swipe Physics, WebSockets Real-Time Sync & Native Auth Hardening | **Ready to Publish** |
+| **Post #8** | Facial Liveness Verification & Verified Platform History | *Upcoming* |
 | **Post #9** | Couples Date Night Marketplace & Subscriptions | *Planned* |
 | **Post #10** | Push Notifications, Cloud Deploy & TestFlight Beta Launch | *Planned* |
 

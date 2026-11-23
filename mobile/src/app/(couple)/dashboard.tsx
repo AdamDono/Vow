@@ -2,8 +2,9 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator
 import { LinearGradient } from 'expo-linear-gradient'
 import { router, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { api } from '../../lib/api'
+import { subscribeWs } from '../../lib/ws'
 
 const MOOD_EMOJIS: Record<number, string> = {
   5: '😊',
@@ -42,6 +43,18 @@ export default function DashboardScreen() {
       loadDashboard()
     }, [loadDashboard])
   )
+
+  // Real-time WebSocket updates for double-blind check-in unlock & relationship end
+  useEffect(() => {
+    const unsubscribe = subscribeWs((event) => {
+      if (event.type === 'couple:checkin') {
+        loadDashboard()
+      } else if (event.type === 'couple:ended') {
+        router.replace('/(single)/discover')
+      }
+    })
+    return unsubscribe
+  }, [loadDashboard])
 
   const onRefresh = () => {
     setRefreshing(true)

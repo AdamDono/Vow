@@ -17,6 +17,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useFocusEffect } from 'expo-router'
 import { api } from '../../lib/api'
+import { subscribeWs, sendTyping } from '../../lib/ws'
 
 interface CoupleMessage {
   id: string
@@ -30,15 +31,17 @@ interface CoupleMessage {
 export default function CoupleChatScreen() {
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [selfId, setSelfId] = useState<string | null>(null)
-  const [partner, setPartner] = useState<{ name: string; photo?: string | null }>({ name: 'Partner' })
+  const [partner, setPartner] = useState<{ id?: string; name: string; photo?: string | null }>({ name: 'Partner' })
   const [messages, setMessages] = useState<CoupleMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [partnerTyping, setPartnerTyping] = useState(false)
 
   const flatListRef = useRef<FlatList>(null)
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const loadCoupleChat = useCallback(async () => {
     try {
@@ -63,18 +66,37 @@ export default function CoupleChatScreen() {
     }, [loadCoupleChat])
   )
 
+  // Real-time WebSocket subscription for instant couple messages & typing indicator
   useEffect(() => {
     if (!conversationId) return
-    const interval = setInterval(() => {
-      api.chat
-        .getMessages(conversationId)
-        .then((res) => {
-          if (res?.messages) setMessages(res.messages)
-        })
-        .catch(() => {})
-    }, 4000)
-    return () => clearInterval(interval)
-  }, [conversationId])
+    const unsubscribe = subscribeWs((event) => {
+      if (event.type === 'chat:message' && event.conversationId === conversationId && event.message) {
+        setPartnerTyping(false)
+        setMessages((prev) =>
+          prev.some((m) => m.id === event.message.id) ? prev : [...prev, event.message]
+        )
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80)
+      } else if (
+        event.type === 'chat:typing' &&
+        event.conversationId === conversationId &&
+        event.senderId !== selfId
+      ) {
+        setPartnerTyping(Boolean(event.isTyping))
+      }
+    })
+    return unsubscribe
+  }, [conversationId, selfId])
+
+  const handleInputChange = (text: string) => {
+    setInput(text)
+    if (conversationId && partner.id) {
+      sendTyping(conversationId, partner.id, text.length > 0)
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+      typingTimeoutRef.current = setTimeout(() => {
+        if (conversationId && partner.id) sendTyping(conversationId, partner.id, false)
+      }, 2000)
+    }
+  }
 
   const handleSend = async (customText?: string, mediaUrl?: string) => {
     const textToSend = customText !== undefined ? customText : input.trim()
@@ -166,7 +188,9 @@ export default function CoupleChatScreen() {
           <Text style={styles.headerName}>{partner.name}</Text>
           <View style={styles.badgeRow}>
             <Ionicons name="lock-closed" size={11} color="#7C3AED" />
-            <Text style={styles.headerSub}>Private Vow Channel</Text>
+            <Text style={styles.headerSub}>
+              {partnerTyping ? `${partner.name} is typing...` : 'Private Vow Channel'}
+            </Text>
           </View>
         </View>
       </View>
@@ -249,7 +273,7 @@ export default function CoupleChatScreen() {
           placeholder={`Message ${partner.name}...`}
           placeholderTextColor="#A0A0B0"
           value={input}
-          onChangeText={setInput}
+          onChangeText={handleInputChange}
           multiline
           onSubmitEditing={() => handleSend()}
         />

@@ -1,13 +1,24 @@
 import { View, Text, StyleSheet, Pressable, Dimensions, Image, ActivityIndicator, Modal, ScrollView, Switch } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { router, useFocusEffect } from 'expo-router'
+import { Gesture, GestureDetector } from 'react-native-gesture-handler'
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  interpolate,
+  Extrapolation,
+  runOnJS,
+} from 'react-native-reanimated'
 import { api, getAuthToken, setAuthToken } from '../../lib/api'
 
 const { width, height } = Dimensions.get('window')
 const CARD_WIDTH = width - 32
 const CARD_HEIGHT = height * 0.62
+const SWIPE_THRESHOLD = width * 0.28
 
 interface Candidate {
   id: string
@@ -150,39 +161,138 @@ export default function DiscoverScreen() {
   }
 
   const current = feed[currentIndex]
+  const nextCard = feed[currentIndex + 1]
 
-  const handlePass = async () => {
-    if (!current) return
-    const targetId = current.id
-    if (currentIndex < feed.length) {
-      setCurrentIndex((i) => i + 1)
-    }
+  // Reanimated shared values for 60fps card swipe physics
+  const translateX = useSharedValue(0)
+  const translateY = useSharedValue(0)
+
+  useEffect(() => {
+    translateX.value = 0
+    translateY.value = 0
+  }, [currentIndex, feed.length])
+
+  const commitPass = useCallback(async () => {
+    const target = feed[currentIndex]
+    if (!target) return
+    setCurrentIndex((i) => i + 1)
     try {
-      await api.singles.swipe(targetId, 'pass')
+      await api.singles.swipe(target.id, 'pass')
     } catch (err) {
       console.error('Swipe error:', err)
     }
-  }
+  }, [feed, currentIndex])
 
-  const handleLike = async (isSuperLike = false) => {
-    if (!current) return
-    const target = current
-    if (currentIndex < feed.length) {
+  const commitLike = useCallback(
+    async (isSuperLike = false) => {
+      const target = feed[currentIndex]
+      if (!target) return
       setCurrentIndex((i) => i + 1)
-    }
-    try {
-      const res = await api.singles.swipe(target.id, isSuperLike ? 'super_like' : 'like')
-      if (res.isMatch) {
-        setMatchModal({
-          visible: true,
-          partnerName: target.name,
-          partnerPhoto: target.photos[0] || '',
-        })
+      try {
+        const res = await api.singles.swipe(target.id, isSuperLike ? 'super_like' : 'like')
+        if (res.isMatch) {
+          setMatchModal({
+            visible: true,
+            partnerName: target.name,
+            partnerPhoto: target.photos[0] || '',
+          })
+        }
+      } catch (err) {
+        console.error('Swipe error:', err)
       }
-    } catch (err) {
-      console.error('Swipe error:', err)
+    },
+    [feed, currentIndex]
+  )
+
+  const handlePass = () => {
+    if (!current) return
+    translateX.value = withTiming(-width * 1.25, { duration: 240 }, (finished) => {
+      if (finished) runOnJS(commitPass)()
+    })
+  }
+
+  const handleLike = (isSuperLike = false) => {
+    if (!current) return
+    if (isSuperLike) {
+      translateY.value = withTiming(-height * 0.8, { duration: 260 }, (finished) => {
+        if (finished) runOnJS(commitLike)(true)
+      })
+    } else {
+      translateX.value = withTiming(width * 1.25, { duration: 240 }, (finished) => {
+        if (finished) runOnJS(commitLike)(false)
+      })
     }
   }
+
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetX([-10, 10])
+        .onUpdate((e) => {
+          translateX.value = e.translationX
+          translateY.value = e.translationY * 0.35
+        })
+        .onEnd((e) => {
+          const shouldLike = e.translationX > SWIPE_THRESHOLD || e.velocityX > 700
+          const shouldPass = e.translationX < -SWIPE_THRESHOLD || e.velocityX < -700
+
+          if (shouldLike) {
+            translateX.value = withTiming(width * 1.35, { duration: 220 }, (finished) => {
+              if (finished) runOnJS(commitLike)(false)
+            })
+          } else if (shouldPass) {
+            translateX.value = withTiming(-width * 1.35, { duration: 220 }, (finished) => {
+              if (finished) runOnJS(commitPass)()
+            })
+          } else {
+            translateX.value = withSpring(0, { damping: 16, stiffness: 180 })
+            translateY.value = withSpring(0, { damping: 16, stiffness: 180 })
+          }
+        }),
+    [commitLike, commitPass]
+  )
+
+  const topCardAnimatedStyle = useAnimatedStyle(() => {
+    const rotate = interpolate(
+      translateX.value,
+      [-width * 0.7, 0, width * 0.7],
+      [-14, 0, 14],
+      Extrapolation.CLAMP
+    )
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { rotate: `${rotate}deg` },
+      ],
+    }
+  })
+
+  const likeStampStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(translateX.value, [20, SWIPE_THRESHOLD], [0, 1], Extrapolation.CLAMP),
+    transform: [
+      { rotate: '-14deg' },
+      { scale: interpolate(translateX.value, [20, SWIPE_THRESHOLD], [0.85, 1.05], Extrapolation.CLAMP) },
+    ],
+  }))
+
+  const passStampStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(translateX.value, [-SWIPE_THRESHOLD, -20], [1, 0], Extrapolation.CLAMP),
+    transform: [
+      { rotate: '14deg' },
+      { scale: interpolate(translateX.value, [-SWIPE_THRESHOLD, -20], [1.05, 0.85], Extrapolation.CLAMP) },
+    ],
+  }))
+
+  const nextCardAnimatedStyle = useAnimatedStyle(() => {
+    const progress = Math.min(Math.abs(translateX.value) / SWIPE_THRESHOLD, 1)
+    const scale = interpolate(progress, [0, 1], [0.94, 1], Extrapolation.CLAMP)
+    const opacity = interpolate(progress, [0, 1], [0.65, 1], Extrapolation.CLAMP)
+    return {
+      transform: [{ scale }],
+      opacity,
+    }
+  })
 
   if (loading && !resettingDeck) {
     return (
@@ -387,67 +497,104 @@ export default function DiscoverScreen() {
         </View>
       </View>
 
-      {/* Card */}
+      {/* Card Deck with 60fps Reanimated Swipe Physics */}
       <View style={styles.cardContainer}>
-        <Pressable
-          style={styles.card}
-          onPress={() => {
-            setPhotoViewIndex(0)
-            setInspectModal(current)
-          }}
-        >
-          <Image
-            source={{ uri: current.photos[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80' }}
-            style={styles.cardPhoto}
-            resizeMode="cover"
-          />
+        <View style={styles.cardStack}>
+          {/* Next Card Peek */}
+          {nextCard && (
+            <Animated.View style={[styles.card, styles.nextCard, nextCardAnimatedStyle]} pointerEvents="none">
+              <Image
+                source={{ uri: nextCard.photos[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80' }}
+                style={styles.cardPhoto}
+                resizeMode="cover"
+              />
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.8)']}
+                locations={[0.45, 1]}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.cardInfo}>
+                <Text style={styles.cardName}>
+                  {nextCard.name}, {nextCard.age}
+                </Text>
+                <Text style={styles.locationText}>{nextCard.city}</Text>
+              </View>
+            </Animated.View>
+          )}
 
-          {/* Gradient overlay */}
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.85)']}
-            locations={[0.4, 1]}
-            style={StyleSheet.absoluteFill}
-          />
+          {/* Active Draggable Card */}
+          <GestureDetector gesture={panGesture}>
+            <Animated.View style={[styles.card, topCardAnimatedStyle]}>
+              <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={() => {
+                  setPhotoViewIndex(0)
+                  setInspectModal(current)
+                }}
+              >
+                <Image
+                  source={{ uri: current.photos[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80' }}
+                  style={styles.cardPhoto}
+                  resizeMode="cover"
+                />
 
-          {/* Vouch Rating badge */}
-          <View style={styles.vowBadge}>
-            <Text style={styles.vowBadgeText}>★ {current.vouchRating} Vouch Score</Text>
-          </View>
+                {/* Gradient overlay */}
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.85)']}
+                  locations={[0.4, 1]}
+                  style={StyleSheet.absoluteFill}
+                />
 
-          {/* Tap hint info icon */}
-          <View style={styles.infoBadge}>
-            <Ionicons name="information-circle-outline" size={20} color="#FFFFFF" />
-          </View>
+                {/* LIKE / NOPE Floating Swipe Stamps */}
+                <Animated.View style={[styles.swipeStamp, styles.likeStamp, likeStampStyle]} pointerEvents="none">
+                  <Text style={styles.likeStampText}>LIKE ♥</Text>
+                </Animated.View>
+                <Animated.View style={[styles.swipeStamp, styles.passStamp, passStampStyle]} pointerEvents="none">
+                  <Text style={styles.passStampText}>PASS</Text>
+                </Animated.View>
 
-          {/* Profile info */}
-          <View style={styles.cardInfo}>
-            <View style={styles.nameRow}>
-              <Text style={styles.cardName}>
-                {current.name}, {current.age}
-              </Text>
-              <View style={styles.onlineDot} />
-            </View>
-            <View style={styles.locationRow}>
-              <Ionicons name="location-outline" size={14} color="rgba(255,255,255,0.85)" />
-              <Text style={styles.locationText}>{current.city}</Text>
-            </View>
-            <View style={styles.goalPill}>
-              <Text style={styles.goalPillText}>💍 {current.lookingFor}</Text>
-            </View>
-            {current.bio ? (
-              <Text style={styles.bioText} numberOfLines={2}>
-                {current.bio}
-              </Text>
-            ) : null}
-            <View style={styles.interestRow}>
-              {current.interests.map((i) => (
-                <View key={i} style={styles.interestTag}>
-                  <Text style={styles.interestTagText}>{i}</Text>
+                {/* Vouch Rating badge */}
+                <View style={styles.vowBadge}>
+                  <Text style={styles.vowBadgeText}>★ {current.vouchRating} Vouch Score</Text>
                 </View>
-              ))}
-            </View>
-          </View>
-        </Pressable>
+
+                {/* Tap hint info icon */}
+                <View style={styles.infoBadge}>
+                  <Ionicons name="information-circle-outline" size={20} color="#FFFFFF" />
+                </View>
+
+                {/* Profile info */}
+                <View style={styles.cardInfo}>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.cardName}>
+                      {current.name}, {current.age}
+                    </Text>
+                    <View style={styles.onlineDot} />
+                  </View>
+                  <View style={styles.locationRow}>
+                    <Ionicons name="location-outline" size={14} color="rgba(255,255,255,0.85)" />
+                    <Text style={styles.locationText}>{current.city}</Text>
+                  </View>
+                  <View style={styles.goalPill}>
+                    <Text style={styles.goalPillText}>💍 {current.lookingFor}</Text>
+                  </View>
+                  {current.bio ? (
+                    <Text style={styles.bioText} numberOfLines={2}>
+                      {current.bio}
+                    </Text>
+                  ) : null}
+                  <View style={styles.interestRow}>
+                    {current.interests.map((i) => (
+                      <View key={i} style={styles.interestTag}>
+                        <Text style={styles.interestTagText}>{i}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </Pressable>
+            </Animated.View>
+          </GestureDetector>
+        </View>
 
         {/* Action Buttons */}
         <View style={styles.actions}>
@@ -633,7 +780,14 @@ const styles = StyleSheet.create({
   filterBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: '#E8475E', borderRadius: 10, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   filterBadgeText: { color: '#FFFFFF', fontSize: 10, fontFamily: 'DMSans_700Bold', fontWeight: '700' },
   cardContainer: { flex: 1, paddingHorizontal: 16, paddingBottom: 24 },
+  cardStack: { width: CARD_WIDTH, height: CARD_HEIGHT, position: 'relative' },
   card: { width: CARD_WIDTH, height: CARD_HEIGHT, borderRadius: 28, overflow: 'hidden', backgroundColor: '#F0EDEF' },
+  nextCard: { position: 'absolute', top: 0, left: 0 },
+  swipeStamp: { position: 'absolute', top: 70, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: 3, zIndex: 20 },
+  likeStamp: { left: 22, borderColor: '#22C55E', backgroundColor: 'rgba(34,197,94,0.16)' },
+  likeStampText: { fontSize: 24, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#22C55E', letterSpacing: 1.2 },
+  passStamp: { right: 22, borderColor: '#E8475E', backgroundColor: 'rgba(232,71,94,0.16)' },
+  passStampText: { fontSize: 24, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#E8475E', letterSpacing: 1.2 },
   cardPhoto: { width: '100%', height: '100%' },
   vowBadge: { position: 'absolute', top: 16, left: 16, backgroundColor: 'rgba(232,71,94,0.95)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
   vowBadgeText: { fontSize: 12, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#FFFFFF' },

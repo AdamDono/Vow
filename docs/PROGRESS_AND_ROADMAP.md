@@ -57,23 +57,25 @@
   - Seeded Neon Postgres demo accounts (`adam@vow.app`, `sarah@vow.app`, `elena@vow.app`, `marcus@vow.app`, `sofia@vow.app` — password `password123`).
 - **BIP Post #6:** **Published** (5 live Couples Mode screenshots).
 
+### Milestone 7: Real-Time WebSockets, 60fps Swipe Physics & Beta Security Hardening *(Just Completed!)*
+- **Real-Time WebSocket Hub (`backend/src/ws/hub.ts`, `mobile/src/lib/ws.ts`):**
+  - Attached authenticated `ws` server on `/ws?token=<JWT>` alongside the Hono REST API.
+  - Instant live push events for Single & Couple chat messages (`chat:message`), stateful Date Proposal status updates (`chat:message_updated`), live typing indicators (`chat:typing`), new matches (`single:match`), Vow Proposal send/decline/accept (`proposal:received`, `proposal:updated`, `proposal:accepted`), double-blind check-in unlocks (`couple:checkin`), and relationship end (`couple:ended`).
+- **60fps Drag-to-Swipe Card Physics (`mobile/src/app/(single)/discover.tsx` + `GestureHandlerRootView`):**
+  - Smooth pan gesture drag with rotation interpolation, spring snap-back, velocity fling dismissal, floating **`LIKE ♥`** / **`PASS`** stamps, next-card peek scale-up, and animated button triggers.
+- **Native Session Persistence & Security Hardening:**
+  - Persists JWT tokens in iOS Keychain / Android Keystore via `expo-secure-store` (with web `localStorage` fallback) and hydrates on startup in `mobile/src/app/index.tsx`.
+  - Persisted **Discovery Visibility** (`profiles.discovery_active`) in Neon PostgreSQL and enforced in `GET /api/singles/feed`.
+  - Added `user_blocks` and `user_reports` tables + `POST /api/singles/block` (permanently hides blocked users, deactivates matches, records safety reports, adjusts `vouchRating`, and displays real Trust Score & live report counts on Profile).
+  - Stateful Date Proposal cards (`POST /api/chat/:conversationId/date-proposal/:messageId/respond`) update in-place to **`Date Confirmed! 🎉`** or **`Declined`** across both clients in real time.
+  - Guarded dev-only `neon-sync` fallback behind `NODE_ENV !== 'production'` and removed web browser focus rings on tab icons.
+- **BIP Post #7:** Ready to Publish.
+
 ---
 
 ## 🚀 What to Build Next (Prioritized Roadmap)
 
-### Milestone 7: Real-Time Sync, Swipe Physics & Security Hardening *(Recommended Next)*
-Make the app feel truly native, fast, and safe for real two-phone beta testing:
-1. **Real-Time WebSockets (`ws`):** Replace 4-second polling in Single Chat, Couple Chat, Vow Proposals, and Double-Blind Check-In unlocks with instant WebSocket events (plus typing indicators & read receipts).
-2. **Real Drag-to-Swipe Card Physics (`discover.tsx`):** Wire `react-native-gesture-handler` + `react-native-reanimated` spring card physics (drag left/right with `LIKE` / `PASS` stamps & velocity fling).
-3. **Native Auth & Session Persistence:**
-   - Persist JWT securely on iOS/Android using `expo-secure-store` (currently `localStorage` on web only).
-   - Remove the dev-only `neon-sync` fallback that picks the latest row in `neon_auth.user` when no session token is passed.
-   - Persist the **Discovery Visibility** pause toggle (`profile/index.tsx`) to PostgreSQL and respect it in `GET /api/singles/feed`.
-   - Add real `reports` & `blocks` tables so Block & Report updates trust scores and permanently hides blocked users.
-   - Update Date Proposal acceptance to mutate the card's status to `Accepted ✓` in-place.
-- **Target BIP Post #7:** *"Making Vow Feel Instant: 60fps Swipe Physics + Real-Time WebSockets"*
-
-### Milestone 8: Facial Liveness Verification & Real Platform History
+### Milestone 8: Facial Liveness Verification & Real Platform History *(Recommended Next)*
 Bring Vow's biggest anti-catfish differentiator to life:
 1. **Camera Selfie Liveness Check (`expo-camera`):** Guided quick face check during onboarding/verification instead of defaulting `isVerified: true`.
 2. **Verified Vow Platform History on Profiles:** Display anonymized, verified past relationship metrics (e.g., relationship duration + mutual respect tier from `/api/couples/history`) on Single Mode profile cards & Trust Score modal.

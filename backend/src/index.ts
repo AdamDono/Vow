@@ -10,6 +10,8 @@ import { proposalsRouter } from './routes/proposals.js'
 import { chatRouter } from './routes/chat.js'
 import { uploadRouter } from './routes/upload.js'
 import { serveStatic } from '@hono/node-server/serve-static'
+import { attachWebSocketServer } from './ws/hub.js'
+import type { Server } from 'http'
 
 dotenv.config()
 
@@ -66,7 +68,8 @@ app.route('/api/chat', chatRouter)
 const port = Number(process.env.PORT) || 3001
 
 console.log(`🌸 Vow Backend API server starting on http://localhost:${port}`)
-serve({
+const server = serve({
   fetch: app.fetch,
   port,
 })
+attachWebSocketServer(server as Server)

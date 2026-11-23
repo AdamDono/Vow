@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as ImagePicker from 'expo-image-picker'
 import { api, getAuthToken, setAuthToken } from '../../../lib/api'
+import { subscribeWs, sendTyping } from '../../../lib/ws'
 
 interface ChatMessage {
   id: string
@@ -74,6 +75,8 @@ export default function ChatScreen() {
   const [outgoingVow, setOutgoingVow] = useState<{ id: string; receiverId: string } | null>(null)
   const [vowActionLoading, setVowActionLoading] = useState(false)
   const [vowLockTransition, setVowLockTransition] = useState(false)
+  const [resolvedConvId, setResolvedConvId] = useState<string | null>(null)
+  const [partnerTyping, setPartnerTyping] = useState(false)
 
   // Date Proposal Form State
   const [selectedActivity, setSelectedActivity] = useState(DATE_ACTIVITIES[0])
@@ -81,6 +84,7 @@ export default function ChatScreen() {
   const [dateTime, setDateTime] = useState(QUICK_TIMES[0])
 
   const flatListRef = useRef<FlatList>(null)
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const loadChatData = async () => {
     if (!id) return
@@ -107,7 +111,10 @@ export default function ChatScreen() {
       }
 
       // 2. Fetch messages
-      const msgRes = await api.chat.getMessages(id).catch(() => ({ messages: [] }))
+      const msgRes = await api.chat.getMessages(id).catch(() => ({ conversationId: id, messages: [] }))
+      if (msgRes?.conversationId) {
+        setResolvedConvId(msgRes.conversationId)
+      }
       if (msgRes?.messages) {
         setMessages(msgRes.messages)
       }
@@ -145,30 +152,72 @@ export default function ChatScreen() {
 
   useEffect(() => {
     loadChatData()
-    const interval = setInterval(() => {
-      if (id) {
-        api.chat.getMessages(id).then((res) => {
-          if (res?.messages) {
-            setMessages(res.messages)
-          }
-        }).catch(() => {})
-        api.auth.me().then((meRes) => {
-          if (meRes?.user?.relationshipStatus === 'coupled') {
-            router.replace('/(couple)/dashboard')
-          }
-        }).catch(() => {})
-        api.proposals.list().then((propRes) => {
-          if (!partner?.id) return
-          const inc = propRes.incoming?.find((p: any) => p.senderId === partner.id) || null
-          const out = propRes.outgoing?.find((p: any) => p.receiverId === partner.id) || null
-          setIncomingVow(inc ? { id: inc.id, senderId: inc.senderId } : null)
-          setOutgoingVow(out ? { id: out.id, receiverId: out.receiverId } : null)
-        }).catch(() => {})
-      }
-    }, 4000)
+  }, [id])
 
-    return () => clearInterval(interval)
-  }, [id, partner?.id])
+  // Real-time WebSocket subscription: instant messages, typing, date acceptance & Vow Lock
+  useEffect(() => {
+    if (!id) return
+    const activeConv = resolvedConvId || id
+
+    const unsubscribe = subscribeWs((event) => {
+      if (event.type === 'proposal:accepted') {
+        setVowLockTransition(true)
+        setTimeout(() => {
+          router.replace('/(couple)/dashboard')
+        }, 1400)
+        return
+      }
+
+      if (event.type === 'proposal:received' || event.type === 'proposal:updated') {
+        if (partner?.id) {
+          api.proposals.list().then((propRes) => {
+            const inc = propRes.incoming?.find((p: any) => p.senderId === partner.id) || null
+            const out = propRes.outgoing?.find((p: any) => p.receiverId === partner.id) || null
+            setIncomingVow(inc ? { id: inc.id, senderId: inc.senderId } : null)
+            setOutgoingVow(out ? { id: out.id, receiverId: out.receiverId } : null)
+          }).catch(() => {})
+        }
+        return
+      }
+
+      const matchesRoom =
+        event.conversationId === activeConv ||
+        event.conversationId === id ||
+        event.matchId === id
+
+      if (event.type === 'chat:message' && matchesRoom && event.message) {
+        setPartnerTyping(false)
+        setMessages((prev) =>
+          prev.some((m) => m.id === event.message.id) ? prev : [...prev, event.message]
+        )
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80)
+      } else if (event.type === 'chat:message_updated' && matchesRoom && event.message) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === event.message.id ? event.message : m))
+        )
+      } else if (
+        event.type === 'chat:typing' &&
+        matchesRoom &&
+        event.senderId !== currentUserId
+      ) {
+        setPartnerTyping(Boolean(event.isTyping))
+      }
+    })
+
+    return unsubscribe
+  }, [id, resolvedConvId, partner?.id, currentUserId])
+
+  const handleInputChange = (text: string) => {
+    setInput(text)
+    const activeConv = resolvedConvId || id
+    if (activeConv && partner?.id) {
+      sendTyping(activeConv, partner.id, text.length > 0)
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+      typingTimeoutRef.current = setTimeout(() => {
+        if (activeConv && partner?.id) sendTyping(activeConv, partner.id, false)
+      }, 2000)
+    }
+  }
 
   const handleAcceptVow = async () => {
     if (!incomingVow) return
@@ -299,10 +348,18 @@ export default function ChatScreen() {
     await handleSendMessage(JSON.stringify(proposalData))
   }
 
-  // Accept Date Proposal
-  const handleAcceptDate = async (msg: ChatMessage, proposal: DateProposalData) => {
-    const acceptanceMsg = `🎉 I'd love to! Count me in for ${proposal.emoji} ${proposal.activity} at ${proposal.location} on ${proposal.dateTime}.`
-    await handleSendMessage(acceptanceMsg)
+  // Stateful Date Proposal Accept/Decline (updates card in-place via DB + WebSockets)
+  const handleRespondDate = async (msg: ChatMessage, status: 'accepted' | 'declined') => {
+    const activeConv = resolvedConvId || id
+    if (!activeConv) return
+    try {
+      const res = await api.chat.respondDateProposal(activeConv, msg.id, status)
+      if (res?.message) {
+        setMessages((prev) => prev.map((m) => (m.id === msg.id ? res.message : m)))
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Could not update date proposal.')
+    }
   }
 
   // Unmatch handler
@@ -344,10 +401,17 @@ export default function ChatScreen() {
           onPress: async () => {
             setShowMenuModal(false)
             try {
-              if (id) {
+              if (partner?.id) {
+                await api.singles.blockAndReport({
+                  targetUserId: partner.id,
+                  matchId: id,
+                  report: true,
+                  reason: 'Blocked & reported from chat',
+                })
+              } else if (id) {
                 await api.singles.unmatch(id)
               }
-              Alert.alert('Blocked', 'This user has been blocked.')
+              Alert.alert('Blocked & Reported', 'This user has been permanently blocked and a safety report was logged.')
               router.replace('/(single)/matches')
             } catch (err: any) {
               Alert.alert('Error', err.message || 'Could not block user.')
@@ -398,7 +462,9 @@ export default function ChatScreen() {
             <Text style={styles.headerName}>{partnerName}</Text>
             <View style={styles.onlineRow}>
               <View style={styles.onlineDot} />
-              <Text style={styles.onlineText}>Connected on Vow</Text>
+              <Text style={styles.onlineText}>
+                {partnerTyping ? `${partnerName} is typing...` : 'Connected on Vow'}
+              </Text>
             </View>
           </View>
         </Pressable>
@@ -558,11 +624,26 @@ export default function ChatScreen() {
                       </View>
                     </View>
 
-                    {!isMine ? (
+                    {dateProposal.status === 'accepted' ? (
+                      <View style={styles.dateAcceptedPill}>
+                        <Ionicons name="checkmark-circle" size={16} color="#16A34A" />
+                        <Text style={styles.dateAcceptedPillText}>Date Confirmed! See you there 🎉</Text>
+                      </View>
+                    ) : dateProposal.status === 'declined' ? (
+                      <View style={styles.dateDeclinedPill}>
+                        <Text style={styles.dateDeclinedPillText}>Declined — suggest another time</Text>
+                      </View>
+                    ) : !isMine ? (
                       <View style={styles.dateCardActions}>
                         <Pressable
+                          style={styles.dateDeclineBtn}
+                          onPress={() => handleRespondDate(item, 'declined')}
+                        >
+                          <Text style={styles.dateDeclineBtnText}>Reschedule</Text>
+                        </Pressable>
+                        <Pressable
                           style={styles.dateAcceptBtn}
-                          onPress={() => handleAcceptDate(item, dateProposal)}
+                          onPress={() => handleRespondDate(item, 'accepted')}
                         >
                           <Text style={styles.dateAcceptBtnText}>Accept Date 🎉</Text>
                         </Pressable>
@@ -643,7 +724,7 @@ export default function ChatScreen() {
           placeholder={`Message ${partnerName}...`}
           placeholderTextColor="#A0A0B0"
           value={input}
-          onChangeText={setInput}
+          onChangeText={handleInputChange}
           multiline
           onSubmitEditing={() => handleSendMessage()}
         />
@@ -885,9 +966,15 @@ const styles = StyleSheet.create({
   dateCardDetails: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 10, gap: 6, marginBottom: 12 },
   dateDetailRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dateDetailText: { fontSize: 13, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#1A1A2E' },
-  dateCardActions: { marginTop: 4 },
-  dateAcceptBtn: { backgroundColor: '#E8475E', paddingVertical: 12, borderRadius: 14, alignItems: 'center' },
+  dateCardActions: { marginTop: 4, flexDirection: 'row', gap: 8 },
+  dateDeclineBtn: { flex: 1, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5DDE2', paddingVertical: 12, borderRadius: 14, alignItems: 'center' },
+  dateDeclineBtnText: { color: '#6B6B7B', fontFamily: 'DMSans_600SemiBold', fontWeight: '600', fontSize: 13 },
+  dateAcceptBtn: { flex: 1.5, backgroundColor: '#E8475E', paddingVertical: 12, borderRadius: 14, alignItems: 'center' },
   dateAcceptBtnText: { color: '#FFFFFF', fontFamily: 'DMSans_700Bold', fontWeight: '700', fontSize: 14 },
+  dateAcceptedPill: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#DCFCE7', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 12, borderWidth: 1, borderColor: '#BBF7D0' },
+  dateAcceptedPillText: { fontSize: 13, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#15803D' },
+  dateDeclinedPill: { alignSelf: 'center', backgroundColor: '#F4F2F3', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 12 },
+  dateDeclinedPillText: { fontSize: 12, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#6B6B7B' },
   dateSentPill: { alignSelf: 'center', backgroundColor: '#FFF0ED', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   dateSentPillText: { fontSize: 12, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#E8475E' },
   dateCardTime: { fontSize: 10, color: '#A0A0B0', textAlign: 'right', marginTop: 8 },

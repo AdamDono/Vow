@@ -1,3 +1,4 @@
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { TamaguiProvider } from 'tamagui'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -32,21 +33,23 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null
 
   return (
-    <TamaguiProvider config={vowConfig} defaultTheme="light">
-      <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(single)" />
-        <Stack.Screen name="(couple)" />
-        <Stack.Screen
-          name="proposal"
-          options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
-          }}
-        />
-      </Stack>
-    </TamaguiProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <TamaguiProvider config={vowConfig} defaultTheme="light">
+        <StatusBar style="dark" />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(single)" />
+          <Stack.Screen name="(couple)" />
+          <Stack.Screen
+            name="proposal"
+            options={{
+              presentation: 'modal',
+              animation: 'slide_from_bottom',
+            }}
+          />
+        </Stack>
+      </TamaguiProvider>
+    </GestureHandlerRootView>
   )
 }

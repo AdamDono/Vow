@@ -1,15 +1,15 @@
 import { View, ActivityIndicator, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
 import { useEffect } from 'react'
-import { api, getAuthToken, setAuthToken } from '../lib/api'
+import { api, hydrateAuthToken, setAuthToken } from '../lib/api'
 
-// Entry point: route authenticated users straight into Single or Couples Mode
+// Entry point: hydrate SecureStore/localStorage token & route straight into Single or Couples Mode
 export default function Index() {
   useEffect(() => {
     let active = true
 
     async function resolveInitialRoute() {
-      const token = getAuthToken()
+      const token = await hydrateAuthToken()
       if (!token) {
         if (active) router.replace('/(auth)/welcome')
         return
