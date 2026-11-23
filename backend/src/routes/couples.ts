@@ -6,6 +6,7 @@ import {
   sharedGoals,
   timelineMilestones,
   conversations,
+  messages,
   users,
   profiles,
 } from '../db/schema/index.js'
@@ -527,5 +528,297 @@ couplesRouter.get('/history', async (c) => {
     })
   } catch (err: any) {
     return c.json({ error: err.message || 'Internal server error' }, 500)
+  }
+})
+
+// --- LIVE NEARBY DATE SPOTS (Free OpenStreetMap Overpass API + Curated Fallback) ---
+
+interface DateSpot {
+  id: string
+  name: string
+  category: 'dining' | 'coffee' | 'drinks' | 'outdoors'
+  cuisine: string
+  address: string
+  city: string
+  lat?: number
+  lng?: number
+  source: 'live_osm' | 'curated'
+}
+
+const CITY_COORDS: Record<string, { lat: number; lng: number; label: string }> = {
+  'cape town': { lat: -33.9249, lng: 18.4241, label: 'Cape Town' },
+  johannesburg: { lat: -26.2041, lng: 28.0473, label: 'Johannesburg' },
+  durban: { lat: -29.8587, lng: 31.0218, label: 'Durban' },
+  pretoria: { lat: -25.7479, lng: 28.2293, label: 'Pretoria' },
+  london: { lat: 51.5072, lng: -0.1276, label: 'London' },
+}
+
+const CURATED_FALLBACKS: Record<string, DateSpot[]> = {
+  'cape town': [
+    { id: 'ct-1', name: 'Kloof Street House', category: 'dining', cuisine: 'Romantic Brasserie', address: '30 Kloof St, Gardens', city: 'Cape Town', lat: -33.9288, lng: 18.4136, source: 'curated' },
+    { id: 'ct-2', name: 'Truth Coffee Roasting', category: 'coffee', cuisine: 'Artisan Coffee & Brunch', address: '36 Buitenkant St, CBD', city: 'Cape Town', lat: -33.9281, lng: 18.4227, source: 'curated' },
+    { id: 'ct-3', name: 'Bouchon Bistro', category: 'drinks', cuisine: 'Wine Bar & Tapas', address: '95 Hout St, City Centre', city: 'Cape Town', lat: -33.9225, lng: 18.4173, source: 'curated' },
+    { id: 'ct-4', name: 'Kirstenbosch Botanical Garden', category: 'outdoors', cuisine: 'Sunset Picnic & Walks', address: 'Rhodes Dr, Newlands', city: 'Cape Town', lat: -33.9881, lng: 18.4327, source: 'curated' },
+    { id: 'ct-5', name: 'La Colombe', category: 'dining', cuisine: 'Fine Dining Tasting Menu', address: 'Silvermist Wine Estate, Constantia', city: 'Cape Town', lat: -34.0154, lng: 18.4046, source: 'curated' },
+  ],
+  johannesburg: [
+    { id: 'jhb-1', name: 'Marble Restaurant', category: 'dining', cuisine: 'Live-Fire Dining & Views', address: 'Trumpet on Keyes, Rosebank', city: 'Johannesburg', lat: -26.1449, lng: 28.0394, source: 'curated' },
+    { id: 'jhb-2', name: 'Father Coffee', category: 'coffee', cuisine: 'Specialty Espresso Bar', address: '73 Juta St, Braamfontein', city: 'Johannesburg', lat: -26.1925, lng: 28.0339, source: 'curated' },
+    { id: 'jhb-3', name: 'Sin+Tax', category: 'drinks', cuisine: 'Craft Cocktail Lounge', address: 'Cnr Bolton & Jan Smuts, Rosebank', city: 'Johannesburg', lat: -26.1466, lng: 28.0407, source: 'curated' },
+    { id: 'jhb-4', name: 'Walter Sisulu Botanical Garden', category: 'outdoors', cuisine: 'Waterfall Picnic & Trails', address: 'Malcolm Rd, Roodepoort', city: 'Johannesburg', lat: -26.0867, lng: 27.8442, source: 'curated' },
+    { id: 'jhb-5', name: 'Saint Restaurant', category: 'dining', cuisine: 'Modern Italian', address: 'The Marc, Rivonia Rd, Sandton', city: 'Johannesburg', lat: -26.1072, lng: 28.0567, source: 'curated' },
+  ],
+  durban: [
+    { id: 'dbn-1', name: 'The Chefs’ Table', category: 'dining', cuisine: 'Contemporary Seasonal Dining', address: '23 Protea Mall, Umhlanga', city: 'Durban', lat: -29.7267, lng: 31.0846, source: 'curated' },
+    { id: 'dbn-2', name: 'Lineage Coffee', category: 'coffee', cuisine: 'Craft Coffee Roastery', address: 'Hillcrest & Morningside', city: 'Durban', lat: -29.8276, lng: 31.0169, source: 'curated' },
+    { id: 'dbn-3', name: 'The Oyster Box Lighthouse Bar', category: 'drinks', cuisine: 'Oceanfront Sunset Cocktails', address: '2 Lighthouse Rd, Umhlanga', city: 'Durban', lat: -29.7279, lng: 31.0884, source: 'curated' },
+    { id: 'dbn-4', name: 'Durban Botanic Gardens', category: 'outdoors', cuisine: 'Botanical Stroll & Picnic', address: '9A John Zikhali Rd, Berea', city: 'Durban', lat: -29.8466, lng: 31.0065, source: 'curated' },
+  ],
+}
+
+const spotsCache = new Map<string, { expiresAt: number; spots: DateSpot[]; source: 'live_osm' | 'curated' }>()
+
+function mapOsmAmenityToCategory(tags: Record<string, string>): DateSpot['category'] {
+  if (tags.amenity === 'cafe') return 'coffee'
+  if (tags.amenity === 'bar' || tags.amenity === 'pub' || tags.amenity === 'wine_bar') return 'drinks'
+  if (tags.leisure === 'park' || tags.leisure === 'garden' || tags.tourism === 'viewpoint') return 'outdoors'
+  return 'dining'
+}
+
+async function fetchLiveOsmSpots(
+  lat: number,
+  lng: number,
+  cityLabel: string,
+  category: string,
+  hasGps: boolean
+): Promise<DateSpot[]> {
+  const categoryQueries: Array<{ q: string; cat: DateSpot['category'] }> =
+    category === 'dining'
+      ? [{ q: 'restaurant', cat: 'dining' }]
+      : category === 'coffee'
+      ? [{ q: 'cafe', cat: 'coffee' }]
+      : category === 'drinks'
+      ? [{ q: 'bar', cat: 'drinks' }]
+      : category === 'outdoors'
+      ? [{ q: 'park', cat: 'outdoors' }]
+      : [
+          { q: 'restaurant', cat: 'dining' },
+          { q: 'cafe', cat: 'coffee' },
+          { q: 'bar', cat: 'drinks' },
+          { q: 'park', cat: 'outdoors' },
+        ]
+
+  const delta = 0.09
+  const viewbox = `${lng - delta},${lat + delta},${lng + delta},${lat - delta}`
+  const perQueryLimit = category === 'all' ? 5 : 15
+
+  const seenNames = new Set<string>()
+  const results: DateSpot[] = []
+
+  await Promise.all(
+    categoryQueries.map(async ({ q, cat }) => {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 7000)
+      try {
+        const params = new URLSearchParams({
+          q: hasGps ? q : `${q} in ${cityLabel}`,
+          format: 'json',
+          addressdetails: '1',
+          limit: String(perQueryLimit),
+          viewbox,
+          bounded: hasGps ? '1' : '0',
+        })
+
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+          headers: { 'User-Agent': 'VowRelationshipOS/1.0 (https://vow.app)' },
+          signal: controller.signal,
+        })
+
+        if (!res.ok) return
+        const items: any[] = await res.json()
+        if (!Array.isArray(items)) return
+
+        for (const item of items) {
+          const name = (item.name || '').trim()
+          if (!name || seenNames.has(name.toLowerCase())) continue
+          seenNames.add(name.toLowerCase())
+
+          const addr = item.address || {}
+          const street = [addr.house_number, addr.road].filter(Boolean).join(' ')
+          const suburb = addr.suburb || addr.neighbourhood || addr.city || addr.town || cityLabel
+          const formattedAddr = street ? `${street}, ${suburb}` : suburb
+
+          const rawType = (item.type || '').replace(/_/g, ' ')
+          const cuisineLabel =
+            cat === 'coffee'
+              ? 'Artisan Coffee & Cafe'
+              : cat === 'drinks'
+              ? 'Bar & Wine Lounge'
+              : cat === 'outdoors'
+              ? 'Park & Scenic Walk'
+              : rawType && rawType !== 'restaurant'
+              ? rawType.charAt(0).toUpperCase() + rawType.slice(1)
+              : 'Local Restaurant'
+
+          results.push({
+            id: `osm-${item.place_id}`,
+            name,
+            category: cat,
+            cuisine: cuisineLabel,
+            address: formattedAddr,
+            city: addr.city || addr.town || cityLabel,
+            lat: Number(item.lat),
+            lng: Number(item.lon),
+            source: 'live_osm',
+          })
+        }
+      } catch {
+        // ignore individual category timeout
+      } finally {
+        clearTimeout(timer)
+      }
+    })
+  )
+
+  return results
+}
+
+// GET /api/couples/date-spots — Free real nearby date spots via OpenStreetMap Overpass API
+couplesRouter.get('/date-spots', async (c) => {
+  try {
+    const authUser = c.get('user')
+    const rawCity = (c.req.query('city') || '').trim()
+    const category = (c.req.query('category') || 'all').toLowerCase()
+    const latParam = Number(c.req.query('lat'))
+    const lngParam = Number(c.req.query('lng'))
+
+    let cityLabel = rawCity
+    if (!cityLabel) {
+      const userProfile = await db.query.profiles.findFirst({
+        where: eq(profiles.userId, authUser.userId),
+      })
+      cityLabel = (userProfile?.city || 'Cape Town').split(',')[0].trim()
+    }
+
+    const cityKey = cityLabel.toLowerCase()
+    const knownCity = Object.entries(CITY_COORDS).find(([k]) => cityKey.includes(k))
+
+    let lat = !isNaN(latParam) && latParam !== 0 ? latParam : knownCity?.[1].lat
+    let lng = !isNaN(lngParam) && lngParam !== 0 ? lngParam : knownCity?.[1].lng
+
+    // Geocode unknown cities via free OpenStreetMap Nominatim
+    if (!lat || !lng) {
+      try {
+        const nomRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(cityLabel)}`,
+          { headers: { 'User-Agent': 'VowRelationshipOS/1.0' } }
+        )
+        if (nomRes.ok) {
+          const nomData: any = await nomRes.json()
+          if (nomData?.[0]) {
+            lat = Number(nomData[0].lat)
+            lng = Number(nomData[0].lon)
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (!lat || !lng) {
+      lat = CITY_COORDS['cape town'].lat
+      lng = CITY_COORDS['cape town'].lng
+      cityLabel = 'Cape Town'
+    }
+
+    const cacheKey = `${lat.toFixed(2)}:${lng.toFixed(2)}:${category}`
+    const cached = spotsCache.get(cacheKey)
+    if (cached && cached.expiresAt > Date.now()) {
+      return c.json({ city: cityLabel, source: cached.source, spots: cached.spots })
+    }
+
+    const hasGps = !isNaN(latParam) && latParam !== 0 && !isNaN(lngParam) && lngParam !== 0
+    const liveSpots = await fetchLiveOsmSpots(lat, lng, cityLabel, category, hasGps)
+    if (liveSpots.length > 0) {
+      spotsCache.set(cacheKey, {
+        expiresAt: Date.now() + 10 * 60 * 1000,
+        spots: liveSpots,
+        source: 'live_osm',
+      })
+      return c.json({ city: cityLabel, source: 'live_osm', spots: liveSpots })
+    }
+
+    // Fallback to curated local spots if Overpass API times out or is rate-limited
+    const fallbackPool =
+      CURATED_FALLBACKS[knownCity?.[0] || 'cape town'] || CURATED_FALLBACKS['cape town']
+    const filteredFallback =
+      category === 'all' ? fallbackPool : fallbackPool.filter((s) => s.category === category)
+
+    return c.json({
+      city: knownCity?.[1].label || cityLabel,
+      source: 'curated',
+      spots: filteredFallback,
+    })
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Could not load nearby date spots' }, 500)
+  }
+})
+
+// POST /api/couples/date-spots/plan — Save planned date to Shared Vows + notify partner in Couple Chat
+couplesRouter.post('/date-spots/plan', async (c) => {
+  try {
+    const authUser = c.get('user')
+    const relationship = await getActiveRelationship(authUser.userId)
+    if (!relationship) {
+      return c.json({ error: 'No active relationship found' }, 404)
+    }
+
+    const { spotName, address, dateTimeLabel, note } = await c.req.json()
+    if (!spotName) {
+      return c.json({ error: 'spotName is required' }, 400)
+    }
+
+    const partnerId =
+      relationship.partner1Id === authUser.userId
+        ? relationship.partner2Id
+        : relationship.partner1Id
+
+    // 1. Add to Shared Vows / Upcoming Date Plans
+    const [goal] = await db
+      .insert(sharedGoals)
+      .values({
+        relationshipId: relationship.id,
+        title: `Date Night: ${String(spotName).trim()}`,
+        description: [dateTimeLabel, address, note].filter(Boolean).join(' • '),
+        isCompleted: false,
+      })
+      .returning()
+
+    // 2. Post a live message in their Private Vow Channel
+    const coupleConv = await getOrCreateCoupleConversation(relationship.id)
+    const msgText = `🍽️ Date Night Planned: ${spotName}${dateTimeLabel ? ` (${dateTimeLabel})` : ''}${address ? ` — ${address}` : ''}${note ? `\n"${note}"` : ''}`
+
+    const [newMsg] = await db
+      .insert(messages)
+      .values({
+        conversationId: coupleConv.id,
+        senderId: authUser.userId,
+        text: msgText,
+        isRead: false,
+      })
+      .returning()
+
+    // 3. Real-time push to partner over WebSockets
+    emitToUser(partnerId, {
+      type: 'chat:message',
+      conversationId: coupleConv.id,
+      message: newMsg,
+    })
+
+    return c.json({
+      success: true,
+      goal,
+      message: newMsg,
+    })
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Could not plan date night' }, 500)
   }
 })

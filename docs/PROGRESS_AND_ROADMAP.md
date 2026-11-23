@@ -81,18 +81,25 @@
   - Surfaced on My Profile, Discover Profile Inspector, and In-Chat Profile Inspector.
 - **BIP Post #8:** Ready to Publish.
 
+### Milestone 9: Live Nearby Date Night Spots & Couple Planner *(Just Completed!)*
+- **Free Real-World Restaurant & Date Spot Discovery (`GET /api/couples/date-spots`):**
+  - Powered by **OpenStreetMap Overpass API + Nominatim** (100% free, zero API keys or Stripe required) with 10-minute caching and curated Cape Town / Johannesburg / Durban fallbacks.
+  - Supports live GPS detection, city presets, and category filters (`All`, `Dining`, `Coffee`, `Wine & Bars`, `Outdoors`).
+- **1-Tap Date Night Planner (`POST /api/couples/date-spots/plan`, `mobile/src/app/date-spots.tsx`):**
+  - Accessible directly from **Couples Dashboard → Date Night Spots**.
+  - Opens real venue locations in Google Maps and lets couples schedule a date night that automatically saves into **Shared Vows** AND drops a live real-time message into their **Private Vow Channel** over WebSockets.
+- **BIP Post #9:** Ready to Publish.
+
 ---
 
 ## 🚀 What to Build Next (Prioritized Roadmap)
 
-### Milestone 9: Couples Date Night Marketplace & Monetization *(Recommended Next)*
-Turn Couples Mode into a real revenue engine (without ads):
-1. **Curated Date Night Bookings Tab/Screen:** Browse local restaurants, getaways, and experiences (e.g., Cape Town / Joburg spots) right from Couples Mode.
-2. **Stripe / Apple Pay Checkout:** Book date packages (10% B2B commission model) + **Vow Plus** subscription (Single Mode blurred Likes / boosts; Couples Mode relationship analytics).
-- **Target BIP Post #9:** *"How a Dating App Makes Money WITHOUT Keeping You Single"*
-
-### Milestone 10: Production Deployment, Push Notifications & Beta Launch
+### Milestone 10: Push Notifications, Production Cloud Deploy & Beta Launch *(Recommended Next)*
 1. **Push Notifications (Expo Notifications):** Instant alerts for new matches, messages, incoming Vow proposals, and 8:00 PM double-blind check-in reminders.
-2. **Backend Hosting:** Deploy Hono API to Railway / Fly.io with production env vars (`JWT_SECRET`, `DATABASE_URL`, `UPLOADTHING_TOKEN`).
-3. **EAS Builds & TestFlight / Play Store Beta:** Ship v1.0 beta to the first 100 testers.
+2. **Backend Hosting:** Deploy Hono + WebSocket API to Railway / Render / Fly.io with production env vars (`JWT_SECRET`, `DATABASE_URL`, `UPLOADTHING_TOKEN`).
+3. **EAS Builds & TestFlight / Play Store Beta:** Configure `eas.json` and ship v1.0 beta to the first 50–100 testers.
 - **Target BIP Post #10:** *"It's Live! Launching Vow to Our First 100 Beta Testers"*
+
+### Milestone 11 (Post-Beta): Revenue & Partner Venues
+- **Vow Plus Subscriptions:** RevenueCat (Apple IAP / Google Play Billing) for Single & Couple premium tiers.
+- **Partner Venue Bookings:** Paystack / Yoco local ZAR bookings with hand-onboarded partner restaurants & 10% B2B commission once active couples are live.

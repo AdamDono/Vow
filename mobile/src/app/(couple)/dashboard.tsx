@@ -269,11 +269,11 @@ export default function DashboardScreen() {
             </View>
             <Text style={styles.actionLabel}>Memory Vault</Text>
           </Pressable>
-          <Pressable style={styles.actionCard} onPress={() => router.push('/(couple)/timeline')}>
+          <Pressable style={styles.actionCard} onPress={() => router.push('/date-spots' as any)}>
             <View style={styles.actionIconWrap}>
-              <Ionicons name="heart-outline" size={24} color="#E8475E" />
+              <Ionicons name="restaurant-outline" size={24} color="#E8475E" />
             </View>
-            <Text style={styles.actionLabel}>Shared Vows</Text>
+            <Text style={styles.actionLabel}>Date Night Spots</Text>
           </Pressable>
         </View>
       </View>

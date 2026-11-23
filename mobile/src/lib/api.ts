@@ -183,6 +183,22 @@ export const api = {
         body: JSON.stringify(payload || {}),
       }),
     getHistory: () => apiRequest<{ count: number; relationships: any[] }>('/api/couples/history'),
+    getDateSpots: (params?: { city?: string; category?: string; lat?: number; lng?: number }) => {
+      const qs = new URLSearchParams()
+      if (params?.city) qs.append('city', params.city)
+      if (params?.category && params.category !== 'all') qs.append('category', params.category)
+      if (params?.lat) qs.append('lat', String(params.lat))
+      if (params?.lng) qs.append('lng', String(params.lng))
+      const suffix = qs.toString() ? `?${qs.toString()}` : ''
+      return apiRequest<{ city: string; source: 'live_osm' | 'curated'; spots: any[] }>(
+        `/api/couples/date-spots${suffix}`
+      )
+    },
+    planDateNight: (payload: { spotName: string; address?: string; dateTimeLabel?: string; note?: string }) =>
+      apiRequest<{ success: boolean; goal: any; message: any }>('/api/couples/date-spots/plan', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
   },
 
   // Proposals

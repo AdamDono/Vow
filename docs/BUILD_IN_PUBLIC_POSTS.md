@@ -545,6 +545,32 @@ Would you want a verified dating resume on dating apps? 👇
 
 ---
 
+# 🍽️ POST #9: Live Nearby Date Night Discovery (Built for \$0)
+
+**Theme:** Keeping Couples Going on Real Dates — Live OpenStreetMap Venue Discovery + 1-Tap Couple Planning Without Bloat or Paid APIs.
+
+### 💼 LinkedIn Format (Tight & High-Retention)
+```markdown
+Couples don’t stop loving each other. They just stop going on dates.
+
+Every Friday it’s the same loop:
+"Where should we go?" → "I don’t know, what do you feel like?" → Staying on the couch.
+
+So today on **Vow**, I built **Date Night Spots** right inside Couples Mode — powered by live OpenStreetMap data for \$0 in API fees:
+
+• **Real Nearby Spots:** Detects live restaurants, artisan coffee shops, wine bars, and parks around your GPS or city (Cape Town, Joburg, Durban & anywhere).
+• **1-Tap Plan Date Night:** Pick a spot + time slot → it automatically saves to your **Shared Vows** AND drops a live invite straight into your **Private Vow Channel** over WebSockets.
+• **Zero Friction:** 1 tap opens directions straight in Maps.
+
+Next milestone: Push Notifications, Cloud Deploy, and getting Vow onto real phones for TestFlight Beta! 🚀
+
+Drop your go-to date night spot below 👇
+
+#BuildInPublic #Startups #ReactNative #ProductDesign #IndieHacker #CouplesApp
+```
+
+---
+
 ## 📅 Roadmap Overview
 
 | Post # | Milestone Covered | Status |
@@ -557,6 +583,6 @@ Would you want a verified dating resume on dating apps? 👇
 | **Post #6** | The Vow Proposal Lock & Couples Mode Transition | **Published** |
 | **Post #7** | 60fps Swipe Physics, WebSockets Real-Time Sync & Native Auth Hardening | **Ready to Publish** |
 | **Post #8** | Facial Liveness Verification & Verified Platform History | **Ready to Publish** |
-| **Post #9** | Couples Date Night Marketplace & Subscriptions | *Upcoming* |
-| **Post #10** | Push Notifications, Cloud Deploy & TestFlight Beta Launch | *Planned* |
+| **Post #9** | Live Nearby Date Night Spots & Couple Date Planner | **Ready to Publish** |
+| **Post #10** | Push Notifications, Cloud Deploy & TestFlight Beta Launch | *Upcoming* |
 
