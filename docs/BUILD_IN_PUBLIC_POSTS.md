@@ -469,6 +469,9 @@ Would you use a dating app that locks you into Couples Mode when you go exclusiv
 | **Post #3** | Google OAuth, 6-Step Onboarding & UploadThing Cloud Storage | Ready to Publish |
 | **Post #4** | Real-time In-App Chat, Photo Lightbox & Date Proposal Engine | Ready to Publish |
 | **Post #5** | Discovery Filter Engine, Vow Trust Score & Profile Completeness | Ready to Publish |
-| **Post #6** | The Vow Proposal Lock & Couples Mode Transition | **Ready to Publish** |
-| **Post #7** | WebSockets Real-Time Sync, Native Auth Hardening & Facial Liveness | *Upcoming* |
+| **Post #6** | The Vow Proposal Lock & Couples Mode Transition | **Published** |
+| **Post #7** | 60fps Swipe Physics, WebSockets Real-Time Sync & Native Auth Hardening | *Upcoming* |
+| **Post #8** | Facial Liveness Verification & Verified Platform History | *Planned* |
+| **Post #9** | Couples Date Night Marketplace & Subscriptions | *Planned* |
+| **Post #10** | Push Notifications, Cloud Deploy & TestFlight Beta Launch | *Planned* |
 
