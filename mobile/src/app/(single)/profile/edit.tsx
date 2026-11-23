@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import { useState, useEffect } from 'react'
@@ -521,21 +520,14 @@ export default function EditProfileScreen() {
             onPress={handleSave}
             disabled={saving}
           >
-            <LinearGradient
-              colors={['#E8475E', '#C73350']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.saveGradient}
-            >
-              {saving ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <View style={styles.saveInner}>
-                  <Ionicons name="save-outline" size={20} color="#FFFFFF" />
-                  <Text style={styles.saveButtonText}>Save Changes</Text>
-                </View>
-              )}
-            </LinearGradient>
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <View style={styles.saveInner}>
+                <Ionicons name="save-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.saveButtonText}>Save Changes</Text>
+              </View>
+            )}
           </Pressable>
         </View>
       </ScrollView>
@@ -547,15 +539,15 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFBF9' },
   content: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 60 },
   loadingContainer: { flex: 1, backgroundColor: '#FFFBF9', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText: { fontSize: 15, fontFamily: 'PlusJakartaSans_500Medium', color: '#6B6B7B' },
+  loadingText: { fontSize: 15, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#6B6B7B' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 },
   backButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#FFF0ED', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#FDDDE3' },
-  title: { fontSize: 26, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E', letterSpacing: -0.5 },
-  subtitle: { fontSize: 13, fontFamily: 'PlusJakartaSans_400Regular', color: '#8E8E9E', marginTop: 2 },
+  title: { fontSize: 26, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E', letterSpacing: -0.25 },
+  subtitle: { fontSize: 13, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#8E8E9E', marginTop: 2 },
   errorBox: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#FECACA' },
-  errorText: { flex: 1, fontSize: 14, fontFamily: 'PlusJakartaSans_500Medium', color: '#DC2626' },
+  errorText: { flex: 1, fontSize: 14, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#DC2626' },
   successBox: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#ECFDF5', borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#A7F3D0' },
-  successText: { flex: 1, fontSize: 14, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#059669' },
+  successText: { flex: 1, fontSize: 14, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#059669' },
   sectionCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, marginBottom: 18, borderWidth: 1, borderColor: '#F0EDEF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
   photoHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
@@ -564,57 +556,56 @@ const styles = StyleSheet.create({
   photoImage: { width: '100%', height: '100%' },
   emptySlot: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
   plusIcon: { fontSize: 28, color: '#E8475E', lineHeight: 32 },
-  emptySlotHint: { fontSize: 11, fontFamily: 'PlusJakartaSans_500Medium', color: '#A0A0B0' },
+  emptySlotHint: { fontSize: 11, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#A0A0B0' },
   uploadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#FFF0ED' },
-  uploadingText: { fontSize: 11, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#E8475E' },
+  uploadingText: { fontSize: 11, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#E8475E' },
   removeButton: { position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', zIndex: 10 },
-  removeButtonText: { fontSize: 13, color: '#FFFFFF', fontFamily: 'PlusJakartaSans_700Bold' },
+  removeButtonText: { fontSize: 13, color: '#FFFFFF', fontFamily: 'DMSans_700Bold', fontWeight: '700' },
   mainBadge: { position: 'absolute', bottom: 8, left: 8, backgroundColor: '#E8475E', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, zIndex: 10 },
-  mainBadgeText: { fontSize: 11, fontFamily: 'PlusJakartaSans_700Bold', color: '#FFFFFF' },
+  mainBadgeText: { fontSize: 11, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#FFFFFF' },
   makeMainBtn: { position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, zIndex: 10 },
-  makeMainBtnText: { fontSize: 10, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#FFFFFF' },
+  makeMainBtnText: { fontSize: 10, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#FFFFFF' },
   changeOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.4)', paddingVertical: 4, alignItems: 'center' },
-  changeText: { color: '#FFFFFF', fontSize: 10, fontFamily: 'PlusJakartaSans_500Medium' },
-  cardHeader: { fontSize: 17, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E', marginBottom: 4 },
-  cardSub: { fontSize: 13, fontFamily: 'PlusJakartaSans_400Regular', color: '#8E8E9E', marginBottom: 14 },
+  changeText: { color: '#FFFFFF', fontSize: 10, fontFamily: 'DMSans_500Medium', fontWeight: '500' },
+  cardHeader: { fontSize: 17, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E', marginBottom: 4 },
+  cardSub: { fontSize: 13, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#8E8E9E', marginBottom: 14 },
   rowInputs: { flexDirection: 'row', gap: 12 },
   inputGroup: { marginBottom: 14 },
-  label: { fontSize: 13, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#1A1A2E', marginBottom: 6 },
-  input: { backgroundColor: '#F8FAFC', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontFamily: 'PlusJakartaSans_400Regular', color: '#1A1A2E', borderWidth: 1, borderColor: '#E2E8F0' },
+  label: { fontSize: 13, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#1A1A2E', marginBottom: 6 },
+  input: { backgroundColor: '#F8FAFC', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#1A1A2E', borderWidth: 1, borderColor: '#E2E8F0' },
   disabledInput: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F1F5F9', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: '#E2E8F0' },
-  disabledText: { fontSize: 14, fontFamily: 'PlusJakartaSans_400Regular', color: '#64748B' },
+  disabledText: { fontSize: 14, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#64748B' },
   pillGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   choicePill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0' },
   choicePillSelected: { backgroundColor: '#FDDDE3', borderColor: '#E8475E' },
-  choicePillText: { fontSize: 13, fontFamily: 'PlusJakartaSans_500Medium', color: '#64748B' },
-  choicePillTextSelected: { color: '#E8475E', fontFamily: 'PlusJakartaSans_700Bold' },
+  choicePillText: { fontSize: 13, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#64748B' },
+  choicePillTextSelected: { color: '#E8475E', fontFamily: 'DMSans_700Bold', fontWeight: '700' },
   locationInputRow: { flexDirection: 'row', gap: 8 },
   locationDetectBtn: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#FFF0ED', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#FDDDE3' },
   goalsList: { gap: 8 },
   goalPillItem: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F8FAFC', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: '#E2E8F0' },
   goalPillItemSelected: { backgroundColor: '#FFF8F9', borderColor: '#E8475E' },
   goalEmoji: { fontSize: 18 },
-  goalPillItemText: { flex: 1, fontSize: 14, fontFamily: 'PlusJakartaSans_500Medium', color: '#1A1A2E' },
-  goalPillItemTextSelected: { fontFamily: 'PlusJakartaSans_700Bold', color: '#E8475E' },
+  goalPillItemText: { flex: 1, fontSize: 14, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#1A1A2E' },
+  goalPillItemTextSelected: { fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#E8475E' },
   textAreaBox: { backgroundColor: '#F8FAFC', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#E2E8F0' },
-  textArea: { fontSize: 15, fontFamily: 'PlusJakartaSans_400Regular', color: '#1A1A2E', minHeight: 90, lineHeight: 22 },
-  charCount: { fontSize: 11, fontFamily: 'PlusJakartaSans_400Regular', color: '#94A3B8', textAlign: 'right', marginTop: 4 },
+  textArea: { fontSize: 15, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#1A1A2E', minHeight: 90, lineHeight: 22 },
+  charCount: { fontSize: 11, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#94A3B8', textAlign: 'right', marginTop: 4 },
   sparkRow: { marginTop: 10, gap: 6 },
-  sparkTitle: { fontSize: 12, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#64748B' },
+  sparkTitle: { fontSize: 12, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#64748B' },
   sparkPill: { alignSelf: 'flex-start', backgroundColor: '#FFF0ED', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: '#FDDDE3' },
-  sparkPillText: { fontSize: 12, fontFamily: 'PlusJakartaSans_500Medium', color: '#E8475E' },
+  sparkPillText: { fontSize: 12, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#E8475E' },
   interestHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  counterText: { fontSize: 13, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#E8475E' },
+  counterText: { fontSize: 13, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#E8475E' },
   interestGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   interestPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0' },
   interestPillSelected: { backgroundColor: '#FDDDE3', borderColor: '#E8475E' },
   interestPillDisabled: { opacity: 0.4 },
   interestEmoji: { fontSize: 14 },
-  interestLabel: { fontSize: 13, fontFamily: 'PlusJakartaSans_500Medium', color: '#64748B' },
-  interestLabelSelected: { color: '#E8475E', fontFamily: 'PlusJakartaSans_700Bold' },
+  interestLabel: { fontSize: 13, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#64748B' },
+  interestLabelSelected: { color: '#E8475E', fontFamily: 'DMSans_700Bold', fontWeight: '700' },
   saveSection: { marginTop: 8, marginBottom: 20 },
-  saveButton: { borderRadius: 18, overflow: 'hidden', shadowColor: '#E8475E', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
-  saveGradient: { paddingVertical: 16, alignItems: 'center', justifyContent: 'center', borderRadius: 18 },
+  saveButton: { backgroundColor: '#E8475E', paddingVertical: 16, alignItems: 'center', justifyContent: 'center', borderRadius: 18, shadowColor: '#E8475E', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.28, shadowRadius: 12, elevation: 6 },
   saveInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  saveButtonText: { fontSize: 16, fontFamily: 'PlusJakartaSans_700Bold', color: '#FFFFFF' },
+  saveButtonText: { fontSize: 16, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#FFFFFF' },
 })

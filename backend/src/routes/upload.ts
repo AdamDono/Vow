@@ -85,7 +85,7 @@ uploadRouter.post('/', authMiddleware, async (c) => {
     // 1. Upload to UploadThing (Primary Cloud Storage)
     if (utapi) {
       try {
-        const utFile = new File([rawBuffer], filename, { type: mimeType })
+        const utFile = new File([new Uint8Array(rawBuffer)], filename, { type: mimeType })
         const utRes = await utapi.uploadFiles(utFile)
         if (utRes.data) {
           const publicUrl = utRes.data.ufsUrl || utRes.data.url

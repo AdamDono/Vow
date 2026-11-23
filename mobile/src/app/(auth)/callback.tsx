@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   },
   brandTitle: {
     fontSize: 28,
-    fontFamily: 'PlusJakartaSans_700Bold',
+    fontFamily: 'DMSans_700Bold', fontWeight: '700',
     color: '#E8475E',
     letterSpacing: 2,
     marginBottom: 24,
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 15,
-    fontFamily: 'PlusJakartaSans_500Medium',
+    fontFamily: 'DMSans_500Medium', fontWeight: '500',
     color: '#6B6B7B',
     textAlign: 'center',
   },
@@ -143,13 +143,13 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans_500Medium',
+    fontFamily: 'DMSans_500Medium', fontWeight: '500',
     color: '#DC2626',
     textAlign: 'center',
   },
   retryText: {
     fontSize: 15,
-    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontFamily: 'DMSans_600SemiBold', fontWeight: '600',
     color: '#E8475E',
     marginTop: 8,
   },

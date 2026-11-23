@@ -131,15 +131,36 @@ export const api = {
     getGoals: () => apiRequest<{ goals: any[] }>('/api/couples/goals'),
     createGoal: (goal: { title: string; description?: string; targetDate?: string }) =>
       apiRequest<{ goal: any }>('/api/couples/goals', { method: 'POST', body: JSON.stringify(goal) }),
+    toggleGoal: (goalId: string, isCompleted?: boolean) =>
+      apiRequest<{ goal: any }>(`/api/couples/goals/${goalId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isCompleted }),
+      }),
+    deleteGoal: (goalId: string) =>
+      apiRequest<{ success: boolean }>(`/api/couples/goals/${goalId}`, { method: 'DELETE' }),
     getTimeline: () => apiRequest<{ milestones: any[] }>('/api/couples/timeline'),
+    createMilestone: (payload: { title: string; description?: string; eventDate?: string; photoUrl?: string }) =>
+      apiRequest<{ milestone: any }>('/api/couples/timeline', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    endRelationship: (payload?: { respectRating?: number }) =>
+      apiRequest<{ success: boolean; message: string }>('/api/couples/end', {
+        method: 'POST',
+        body: JSON.stringify(payload || {}),
+      }),
+    getHistory: () => apiRequest<{ count: number; relationships: any[] }>('/api/couples/history'),
   },
 
   // Proposals
   proposals: {
+    list: () => apiRequest<{ incoming: any[]; outgoing: any[] }>('/api/proposals'),
     send: (receiverId: string) =>
       apiRequest<any>('/api/proposals/send', { method: 'POST', body: JSON.stringify({ receiverId }) }),
     accept: (inviteId: string) =>
       apiRequest<any>('/api/proposals/accept', { method: 'POST', body: JSON.stringify({ inviteId }) }),
+    decline: (inviteId: string) =>
+      apiRequest<any>('/api/proposals/decline', { method: 'POST', body: JSON.stringify({ inviteId }) }),
   },
 
   // Chat

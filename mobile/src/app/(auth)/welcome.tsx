@@ -14,7 +14,7 @@ export default function WelcomeScreen() {
       <LinearGradient
         colors={['#FFFBF9', '#FFF0ED', '#FDDDE3']}
         locations={[0, 0.5, 1]}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       {/* Decorative circles */}
@@ -45,14 +45,7 @@ export default function WelcomeScreen() {
             style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
             onPress={() => router.push('/(auth)/signup')}
           >
-            <LinearGradient
-              colors={['#E8475E', '#C73350']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.primaryButtonGradient}
-            >
-              <Text style={styles.primaryButtonText}>Create Account</Text>
-            </LinearGradient>
+            <Text style={styles.primaryButtonText}>Create Account</Text>
           </Pressable>
 
           <Pressable
@@ -124,23 +117,23 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 28,
-    fontFamily: 'PlusJakartaSans_700Bold',
+    fontFamily: 'DMSans_700Bold', fontWeight: '700',
     color: '#1A1A2E',
-    letterSpacing: -0.5,
+    letterSpacing: -0.25,
   },
   heroContainer: {
     gap: 16,
   },
   heroTitle: {
     fontSize: 52,
-    fontFamily: 'PlusJakartaSans_700Bold',
+    fontFamily: 'DMSans_700Bold', fontWeight: '700',
     color: '#1A1A2E',
     lineHeight: 58,
-    letterSpacing: -1.5,
+    letterSpacing: -0.4,
   },
   heroSubtitle: {
     fontSize: 17,
-    fontFamily: 'PlusJakartaSans_400Regular',
+    fontFamily: 'DMSans_400Regular', fontWeight: '400',
     color: '#6B6B7B',
     lineHeight: 26,
   },
@@ -148,26 +141,23 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   primaryButton: {
+    backgroundColor: '#E8475E',
+    paddingVertical: 18,
+    alignItems: 'center',
     borderRadius: 18,
-    overflow: 'hidden',
     shadowColor: '#E8475E',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOpacity: 0.3,
+    shadowRadius: 14,
+    elevation: 6,
   },
   buttonPressed: {
     opacity: 0.9,
     transform: [{ scale: 0.98 }],
   },
-  primaryButtonGradient: {
-    paddingVertical: 18,
-    alignItems: 'center',
-    borderRadius: 18,
-  },
   primaryButtonText: {
     fontSize: 17,
-    fontFamily: 'PlusJakartaSans_700Bold',
+    fontFamily: 'DMSans_700Bold', fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 0.2,
   },
@@ -184,18 +174,18 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     fontSize: 17,
-    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontFamily: 'DMSans_600SemiBold', fontWeight: '600',
     color: '#1A1A2E',
   },
   terms: {
     fontSize: 13,
-    fontFamily: 'PlusJakartaSans_400Regular',
+    fontFamily: 'DMSans_400Regular', fontWeight: '400',
     color: '#A0A0B0',
     textAlign: 'center',
     lineHeight: 20,
   },
   termsLink: {
     color: '#E8475E',
-    fontFamily: 'PlusJakartaSans_500Medium',
+    fontFamily: 'DMSans_500Medium', fontWeight: '500',
   },
 })

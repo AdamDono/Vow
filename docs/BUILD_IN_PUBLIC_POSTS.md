@@ -348,6 +348,118 @@ Follow @VowApp to see us launch Couples Mode next!
 
 ---
 
+# 💍 POST #6: The Vow Commitment Lock & Couples Mode OS
+
+**Theme:** High-Retention Build In Public Showcase — Turning a Dating App Into a Private Relationship OS Once You Go Official (Matched to 5 Live App Screenshots).
+
+### 🖼️ Recommended Screenshot Order (for Maximum Swipes / Dwell Time)
+1. **Couples Dashboard** (`Adam & Sarah • 1014 days • 87% Harmony`) — *The "wait, this is inside a dating app?" hook*
+2. **Reflections Unlocked!** (`Double-blind check-in revealed`) — *The curiosity payoff*
+3. **Private Vow Channel** (`Private couple chat + photo`) — *Intimate, zero-noise space*
+4. **Our Story** (`Memory Vault & Shared Vows`) — *Emotional retention*
+5. **Couple Settings** (`End Relationship on Vow`) — *The plot twist that sparks comments*
+
+### 💼 LinkedIn Format (High-Retention Carousel Post)
+```markdown
+Dating apps lose money the second you fall in love.
+
+Think about that.
+If you meet your person on Tinder or Hinge, you both delete the app.
+Their best outcome is losing two paying users forever.
+
+So I built the opposite.
+
+Inside **Vow**, the moment two matches decide to make it official and accept a **Vow**:
+→ Both profiles vanish from the singles feed.
+→ Every other match closes automatically.
+→ And the entire app transforms into a private OS just for the two of you.
+
+Here is what went live today (swipe through all 5 screens 👇):
+
+1️⃣ **The Relationship Pulse (Screen 1)**
+Instead of a swipe deck, you wake up to your shared space — days together, Shared Vows, and a live Harmony Score driven by how you both actually feel.
+
+2️⃣ **Double-Blind Daily Check-Ins (Screen 2)**
+Every day, you each answer a quick mood + reflection prompt privately.
+The catch? Neither of you can read the other's answer until BOTH submit.
+No guessing. No "I'm fine." Both reflections unlock at the exact same time.
+
+3️⃣ **Private Vow Channel (Screen 3)**
+Your own quiet chat space — no group chats, no unread work messages, no algorithm. Just the two of you.
+
+4️⃣ **Our Story — Memory Vault & Shared Vows (Screen 4)**
+Every trip, anniversary, and promise lives on one shared timeline starting from Day 1 ("Official Vow Commitment").
+
+5️⃣ **The Hardest Feature to Build (Screen 5 — look at the bottom)**
+"End Relationship on Vow."
+If a chapter ever closes, both people return to Single Mode respectfully — carrying an anonymized, verified relationship history instead of starting from zero with strangers who ghost.
+
+Building this solo in public with React Native (Expo) + Hono + Neon Postgres + UploadThing.
+
+Be honest with me 👇
+If you were dating someone seriously, would you actually tap **"Send Vow"** to lock both of you out of swiping — or is that too intense?
+
+#BuildInPublic #Startups #ProductDesign #ReactNative #IndieHacker #DatingApps #UIUX #TechStartup
+```
+
+### 🐦 X (Twitter) Post / Thread (High-Retention)
+```markdown
+🧵 1/6: Dating apps are financially incentivized to keep you single.
+
+If you find love on Hinge, they lose two subscribers.
+
+So I coded a button that locks you OUT of swiping — and transforms the whole app into a private Couples OS the second you go official.
+
+Here’s what I just shipped for @VowApp (with live screenshots) 👇
+
+2/6 [Attach Screen 1 — Dashboard]
+The moment your match accepts your Vow:
+• Both of you disappear from the singles pool
+• Other matches archive automatically
+• Your swipe deck turns into a shared Relationship Pulse (days together, Harmony %, Shared Vows)
+
+3/6 [Attach Screen 2 — Reflections Unlocked]
+My favorite feature: **Double-Blind Daily Check-Ins** 🔒→🔓
+
+You both log your mood + answer a prompt privately.
+Nobody sees anything until BOTH of you submit. Then both reflections unlock together.
+
+Zero bias. Way more honesty.
+
+4/6 [Attach Screen 3 & 4 — Private Chat + Our Story]
+Inside Couples Mode you also get:
+• A private couple-only channel (zero noise)
+• A photo-backed Memory Vault starting on your Vow Day
+• A Shared Vows & Goals checklist you actually complete together
+
+5/6 [Attach Screen 5 — Couple Settings]
+And yes — we built the "End Relationship" flow too.
+
+If a couple breaks up, both return to Single Mode respectfully, keeping an anonymized verified track record instead of resetting into the ghosting void.
+
+6/6 Built from scratch with Expo, TypeScript, Hono, Neon Postgres & UploadThing.
+
+Honest take needed:
+Would you use a dating app that locks you into Couples Mode when you go exclusive — or nah? 👇
+
+#buildinpublic #indiedev #reactnative #uidesign
+```
+
+### 🎥 Short-Form Video / Reel / TikTok Script (30s High-Retention Loop)
+* **[0:00 - 0:03] Visual Hook (Show Screen 1 — Dashboard):**  
+  *Text on screen:* **"I built a dating app that locks you OUT of swiping."**  
+  *Voiceover:* *"Dating apps don’t want you in a relationship — because the day you find love, you delete them."*
+* **[0:03 - 0:09] Reveal (Quick cuts of Screen 1 → Screen 2):**  
+  *"So on Vow, the second you and your match make it official, it removes both of you from the singles feed and turns into a private Couples OS."*
+* **[0:09 - 0:17] Curiosity Feature (Zoom in on Screen 2 — Reflections Unlocked):**  
+  *"My favorite part? Double-blind daily check-ins. You both write how you’re feeling privately, and it stays locked until BOTH of you submit — then it unlocks at the same time."*
+* **[0:17 - 0:24] Value Stack (Quick cuts of Screen 3 → Screen 4 → Screen 5):**  
+  *"You get your own private chat, a shared memory vault starting from day one, shared vows… and if you ever break up, it moves both of you back to single mode respectfully."*
+* **[0:24 - 0:30] Comment-Bait CTA (Hold on Screen 1 or Screen 5):**  
+  *"Be honest — would you send someone a Vow to lock both of you off dating apps, or is that way too intense? Tell me in the comments."*
+
+---
+
 ## 📅 Roadmap Overview
 
 | Post # | Milestone Covered | Status |
@@ -355,7 +467,8 @@ Follow @VowApp to see us launch Couples Mode next!
 | **Post #1** | Vision, Concept & Dual-Mode Architecture | Ready to Publish |
 | **Post #2** | Editorial Design System & Reanimated Physics | Ready to Publish |
 | **Post #3** | Google OAuth, 6-Step Onboarding & UploadThing Cloud Storage | Ready to Publish |
-| **Post #4** | Real-time In-App Chat, Photo Lightbox & Date Proposal Engine | **Ready to Publish** |
-| **Post #5** | Discovery Filter Engine, Vow Trust Score & Profile Completeness | **Ready to Publish** |
-| **Post #6** | The Vow Proposal Lock & Couples Mode Transition | *Upcoming* |
+| **Post #4** | Real-time In-App Chat, Photo Lightbox & Date Proposal Engine | Ready to Publish |
+| **Post #5** | Discovery Filter Engine, Vow Trust Score & Profile Completeness | Ready to Publish |
+| **Post #6** | The Vow Proposal Lock & Couples Mode Transition | **Ready to Publish** |
+| **Post #7** | WebSockets Real-Time Sync, Native Auth Hardening & Facial Liveness | *Upcoming* |
 

@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import { useState, useEffect } from 'react'
@@ -225,18 +224,11 @@ export default function LoginScreen() {
             onPress={() => handleLogin()}
             disabled={loading || googleLoading}
           >
-            <LinearGradient
-              colors={['#E8475E', '#C73350']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.primaryButtonGradient}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.primaryButtonText}>Sign In</Text>
-              )}
-            </LinearGradient>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Sign In</Text>
+            )}
           </Pressable>
 
           {/* Divider */}
@@ -295,29 +287,28 @@ const styles = StyleSheet.create({
   header: { marginBottom: 24 },
   backButton: { marginBottom: 20, width: 44, height: 44, borderRadius: 12, backgroundColor: '#FFF0ED', alignItems: 'center', justifyContent: 'center' },
   backText: { fontSize: 20, color: '#1A1A2E' },
-  title: { fontSize: 34, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E', letterSpacing: -0.8, marginBottom: 8 },
-  subtitle: { fontSize: 16, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B6B7B' },
+  title: { fontSize: 34, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E', letterSpacing: -0.4, marginBottom: 8 },
+  subtitle: { fontSize: 16, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#6B6B7B' },
   errorBox: { backgroundColor: '#FEE2E2', borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#F87171' },
-  errorText: { fontSize: 14, fontFamily: 'PlusJakartaSans_500Medium', color: '#991B1B', textAlign: 'center' },
+  errorText: { fontSize: 14, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#991B1B', textAlign: 'center' },
   form: { gap: 4 },
   inputGroup: { marginBottom: 16 },
-  label: { fontSize: 14, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#1A1A2E', marginBottom: 8 },
-  input: { backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 15, fontSize: 16, fontFamily: 'PlusJakartaSans_400Regular', color: '#1A1A2E', borderWidth: 1.5, borderColor: '#F0EDEF' },
+  label: { fontSize: 14, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#1A1A2E', marginBottom: 8 },
+  input: { backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 15, fontSize: 16, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#1A1A2E', borderWidth: 1.5, borderColor: '#F0EDEF' },
   forgotPassword: { alignSelf: 'flex-end', marginBottom: 24 },
-  forgotPasswordText: { fontSize: 14, fontFamily: 'PlusJakartaSans_500Medium', color: '#E8475E' },
-  primaryButton: { borderRadius: 18, overflow: 'hidden', shadowColor: '#E8475E', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 8 },
-  primaryButtonGradient: { paddingVertical: 18, alignItems: 'center', borderRadius: 18 },
-  primaryButtonText: { fontSize: 17, fontFamily: 'PlusJakartaSans_700Bold', color: '#FFFFFF' },
+  forgotPasswordText: { fontSize: 14, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#E8475E' },
+  primaryButton: { backgroundColor: '#E8475E', paddingVertical: 18, alignItems: 'center', borderRadius: 18, shadowColor: '#E8475E', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 14, elevation: 6 },
+  primaryButtonText: { fontSize: 17, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#FFFFFF' },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 20 },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#F0EDEF' },
-  dividerText: { fontSize: 14, fontFamily: 'PlusJakartaSans_400Regular', color: '#A0A0B0' },
+  dividerText: { fontSize: 14, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#A0A0B0' },
   googleButton: { backgroundColor: '#FFFFFF', borderRadius: 14, paddingVertical: 16, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   socialInner: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   googleIconImage: { width: 22, height: 22 },
-  googleButtonText: { fontSize: 16, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#1A1A2E' },
+  googleButtonText: { fontSize: 16, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#1A1A2E' },
   socialButton: { backgroundColor: '#FFFFFF', borderRadius: 14, paddingVertical: 16, alignItems: 'center', borderWidth: 1.5, borderColor: '#F0EDEF' },
-  socialButtonText: { fontSize: 16, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#1A1A2E' },
+  socialButtonText: { fontSize: 16, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#1A1A2E' },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
-  footerText: { fontSize: 15, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B6B7B' },
-  footerLink: { fontSize: 15, fontFamily: 'PlusJakartaSans_700Bold', color: '#E8475E' },
+  footerText: { fontSize: 15, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#6B6B7B' },
+  footerLink: { fontSize: 15, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#E8475E' },
 })

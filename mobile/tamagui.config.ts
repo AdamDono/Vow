@@ -52,11 +52,11 @@ const vowConfig = createTamagui({
     ...baseConfig.fonts,
     heading: {
       ...baseConfig.fonts.heading,
-      family: 'PlusJakartaSans_700Bold',
+      family: 'DMSans_700Bold',
     },
     body: {
       ...baseConfig.fonts.body,
-      family: 'PlusJakartaSans_400Regular',
+      family: 'DMSans_400Regular',
     },
   },
   settings: {

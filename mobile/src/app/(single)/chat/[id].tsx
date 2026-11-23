@@ -65,11 +65,15 @@ export default function ChatScreen() {
   const [sending, setSending] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
-  // Modals
+  // Modals & Vow Proposal State
   const [showDateModal, setShowDateModal] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showMenuModal, setShowMenuModal] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [incomingVow, setIncomingVow] = useState<{ id: string; senderId: string } | null>(null)
+  const [outgoingVow, setOutgoingVow] = useState<{ id: string; receiverId: string } | null>(null)
+  const [vowActionLoading, setVowActionLoading] = useState(false)
+  const [vowLockTransition, setVowLockTransition] = useState(false)
 
   // Date Proposal Form State
   const [selectedActivity, setSelectedActivity] = useState(DATE_ACTIVITIES[0])
@@ -92,6 +96,10 @@ export default function ChatScreen() {
       // 1. Get current user
       const meRes = await api.auth.me().catch(() => null)
       if (meRes?.user) {
+        if (meRes.user.relationshipStatus === 'coupled') {
+          router.replace('/(couple)/dashboard')
+          return
+        }
         setCurrentUserId(meRes.user.id)
         if (meRes.user.profile?.firstName) {
           setCurrentUserName(meRes.user.profile.firstName)
@@ -105,16 +113,28 @@ export default function ChatScreen() {
       }
 
       // 3. Find partner info
+      let resolvedPartner: PartnerInfo | null = null
       const convRes = await api.chat.getConversations().catch(() => ({ conversations: [] }))
       const matchedConv = convRes.conversations?.find((c: any) => c.id === id || c.matchId === id)
       if (matchedConv?.partner) {
+        resolvedPartner = matchedConv.partner
         setPartner(matchedConv.partner)
       } else {
         const matchesRes = await api.singles.getMatches().catch(() => ({ matches: [] }))
         const matched = matchesRes.matches?.find((m: any) => m.matchId === id || m.partner?.id === id)
         if (matched?.partner) {
+          resolvedPartner = matched.partner
           setPartner(matched.partner)
         }
+      }
+
+      // 4. Sync pending Vow proposals with this partner
+      if (resolvedPartner?.id) {
+        const propRes = await api.proposals.list().catch(() => ({ incoming: [], outgoing: [] }))
+        const inc = propRes.incoming?.find((p: any) => p.senderId === resolvedPartner!.id) || null
+        const out = propRes.outgoing?.find((p: any) => p.receiverId === resolvedPartner!.id) || null
+        setIncomingVow(inc ? { id: inc.id, senderId: inc.senderId } : null)
+        setOutgoingVow(out ? { id: out.id, receiverId: out.receiverId } : null)
       }
     } catch (err) {
       console.warn('Error loading chat data:', err)
@@ -132,11 +152,55 @@ export default function ChatScreen() {
             setMessages(res.messages)
           }
         }).catch(() => {})
+        api.auth.me().then((meRes) => {
+          if (meRes?.user?.relationshipStatus === 'coupled') {
+            router.replace('/(couple)/dashboard')
+          }
+        }).catch(() => {})
+        api.proposals.list().then((propRes) => {
+          if (!partner?.id) return
+          const inc = propRes.incoming?.find((p: any) => p.senderId === partner.id) || null
+          const out = propRes.outgoing?.find((p: any) => p.receiverId === partner.id) || null
+          setIncomingVow(inc ? { id: inc.id, senderId: inc.senderId } : null)
+          setOutgoingVow(out ? { id: out.id, receiverId: out.receiverId } : null)
+        }).catch(() => {})
       }
     }, 4000)
 
     return () => clearInterval(interval)
-  }, [id])
+  }, [id, partner?.id])
+
+  const handleAcceptVow = async () => {
+    if (!incomingVow) return
+    setVowActionLoading(true)
+    try {
+      await api.proposals.accept(incomingVow.id)
+      setVowLockTransition(true)
+      setTimeout(() => {
+        router.replace('/(couple)/dashboard')
+      }, 1500)
+    } catch (err: any) {
+      Alert.alert('Could not accept Vow', err.message || 'Please try again.')
+    } finally {
+      setVowActionLoading(false)
+    }
+  }
+
+  const handleDeclineOrWithdrawVow = async (inviteId: string, isWithdraw: boolean) => {
+    setVowActionLoading(true)
+    try {
+      await api.proposals.decline(inviteId)
+      if (isWithdraw) {
+        setOutgoingVow(null)
+      } else {
+        setIncomingVow(null)
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Could not update Vow proposal.')
+    } finally {
+      setVowActionLoading(false)
+    }
+  }
 
   const handleSendMessage = async (customText?: string, mediaUrl?: string) => {
     const textToSend = customText !== undefined ? customText : input.trim()
@@ -341,14 +405,79 @@ export default function ChatScreen() {
 
         {/* Action Buttons */}
         <View style={styles.headerActions}>
-          <Pressable style={styles.vowButton} onPress={() => router.push('/proposal')}>
-            <Text style={styles.vowButtonText}>💍 Send Vow</Text>
-          </Pressable>
+          {outgoingVow ? (
+            <Pressable
+              style={styles.vowPendingBadge}
+              onPress={() =>
+                Alert.alert('Vow Sent 💍', `Waiting for ${partnerName} to respond.`, [
+                  { text: 'Keep Waiting', style: 'cancel' },
+                  {
+                    text: 'Withdraw Vow',
+                    style: 'destructive',
+                    onPress: () => handleDeclineOrWithdrawVow(outgoingVow.id, true),
+                  },
+                ])
+              }
+            >
+              <Text style={styles.vowPendingText}>💍 Pending</Text>
+            </Pressable>
+          ) : !incomingVow ? (
+            <Pressable
+              style={styles.vowButton}
+              onPress={() =>
+                router.push({
+                  pathname: '/proposal',
+                  params: {
+                    receiverId: partner?.id || '',
+                    partnerName: partner?.name || 'your match',
+                    partnerPhoto: partner?.photo || '',
+                  },
+                })
+              }
+            >
+              <Text style={styles.vowButtonText}>💍 Send Vow</Text>
+            </Pressable>
+          ) : null}
           <Pressable style={styles.menuIconBtn} onPress={() => setShowMenuModal(true)}>
             <Ionicons name="ellipsis-vertical" size={20} color="#6B6B7B" />
           </Pressable>
         </View>
       </View>
+
+      {/* Incoming Vow Proposal Banner */}
+      {incomingVow && (
+        <LinearGradient
+          colors={['#FFF5F7', '#F5EEFF']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.incomingVowBanner}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.incomingVowTitle}>💍 {partnerName} sent you a Vow!</Text>
+            <Text style={styles.incomingVowSub}>Accept to lock in Couples Mode together</Text>
+          </View>
+          <View style={styles.incomingVowBtns}>
+            <Pressable
+              style={styles.vowDeclineSmall}
+              onPress={() => handleDeclineOrWithdrawVow(incomingVow.id, false)}
+              disabled={vowActionLoading}
+            >
+              <Text style={styles.vowDeclineSmallText}>Decline</Text>
+            </Pressable>
+            <Pressable
+              style={styles.vowAcceptSmall}
+              onPress={handleAcceptVow}
+              disabled={vowActionLoading}
+            >
+              {vowActionLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.vowAcceptSmallText}>Accept 💍</Text>
+              )}
+            </Pressable>
+          </View>
+        </LinearGradient>
+      )}
 
       {/* Date Proposal Quick Banner */}
       <Pressable style={styles.dateBanner} onPress={() => setShowDateModal(true)}>
@@ -462,15 +591,10 @@ export default function ChatScreen() {
 
                   {item.text && item.text !== '📷 Photo' ? (
                     isMine ? (
-                      <LinearGradient
-                        colors={['#E8475E', '#C73350']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.messageBubbleGradient}
-                      >
+                      <View style={styles.messageBubbleGradient}>
                         <Text style={[styles.messageText, styles.messageTextMine]}>{item.text}</Text>
                         <Text style={styles.timeMine}>{formatMessageTime(item.createdAt)}</Text>
-                      </LinearGradient>
+                      </View>
                     ) : (
                       <View style={styles.messageBubbleOthers}>
                         <Text style={styles.messageText}>{item.text}</Text>
@@ -529,16 +653,11 @@ export default function ChatScreen() {
           onPress={() => handleSendMessage()}
           disabled={!input.trim() || sending}
         >
-          <LinearGradient
-            colors={input.trim() ? ['#E8475E', '#C73350'] : ['#E0D8DA', '#CFC8CB']}
-            style={styles.sendButtonGradient}
-          >
-            {sending ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Ionicons name="arrow-up" size={20} color="#FFFFFF" />
-            )}
-          </LinearGradient>
+          {sending ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Ionicons name="arrow-up" size={20} color="#FFFFFF" />
+          )}
         </Pressable>
       </View>
 
@@ -611,9 +730,7 @@ export default function ChatScreen() {
 
             {/* Submit Date Proposal */}
             <Pressable style={styles.sendDateBtn} onPress={handleSendDateProposal}>
-              <LinearGradient colors={['#E8475E', '#C73350']} style={styles.sendDateGradient}>
-                <Text style={styles.sendDateBtnText}>Send Date Proposal 💌</Text>
-              </LinearGradient>
+              <Text style={styles.sendDateBtnText}>Send Date Proposal 💌</Text>
             </Pressable>
           </View>
         </View>
@@ -692,6 +809,25 @@ export default function ChatScreen() {
           </View>
         </Modal>
       )}
+
+      {/* Commitment Lock Transition Overlay */}
+      <Modal visible={vowLockTransition} transparent animationType="fade">
+        <LinearGradient
+          colors={['#E8475E', '#C9A0F4']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.lockOverlay}
+        >
+          <View style={styles.lockCircle}>
+            <Text style={{ fontSize: 52 }}>💍</Text>
+          </View>
+          <Text style={styles.lockTitle}>Vow Committed!</Text>
+          <Text style={styles.lockSubtitle}>
+            You and {partnerName} are officially off the singles market. Opening Couples Mode...
+          </Text>
+          <ActivityIndicator color="#FFFFFF" size="large" style={{ marginTop: 24 }} />
+        </LinearGradient>
+      </Modal>
     </KeyboardAvoidingView>
   )
 }
@@ -703,27 +839,27 @@ const styles = StyleSheet.create({
   headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerPhoto: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#F0EDEF' },
   headerInfo: { flex: 1 },
-  headerName: { fontSize: 16, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E' },
+  headerName: { fontSize: 16, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E' },
   onlineRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   onlineDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#4ADE80' },
-  onlineText: { fontSize: 12, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B6B7B' },
+  onlineText: { fontSize: 12, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#6B6B7B' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   vowButton: { backgroundColor: '#FDDDE3', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7 },
-  vowButtonText: { fontSize: 13, fontFamily: 'PlusJakartaSans_700Bold', color: '#E8475E' },
+  vowButtonText: { fontSize: 13, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#E8475E' },
   menuIconBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   dateBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFF0ED', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#FDDDE3' },
   dateBannerIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
-  dateBannerTitle: { fontSize: 13, fontFamily: 'PlusJakartaSans_700Bold', color: '#E8475E' },
-  dateBannerSub: { fontSize: 12, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B6B7B' },
+  dateBannerTitle: { fontSize: 13, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#E8475E' },
+  dateBannerSub: { fontSize: 12, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#6B6B7B' },
   loadingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText: { fontSize: 14, fontFamily: 'PlusJakartaSans_500Medium', color: '#6B6B7B' },
+  loadingText: { fontSize: 14, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#6B6B7B' },
   emptyChatBox: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 12 },
   emptyPartnerPhoto: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: '#E8475E', marginBottom: 6 },
-  emptyMatchTitle: { fontSize: 20, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E', textAlign: 'center' },
-  emptyMatchSub: { fontSize: 14, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B6B7B', textAlign: 'center', lineHeight: 22 },
+  emptyMatchTitle: { fontSize: 20, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E', textAlign: 'center' },
+  emptyMatchSub: { fontSize: 14, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#6B6B7B', textAlign: 'center', lineHeight: 22 },
   icebreakers: { gap: 8, width: '100%', marginTop: 8 },
   icebreakerPill: { backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16, borderWidth: 1, borderColor: '#F0EDEF' },
-  icebreakerText: { fontSize: 13, fontFamily: 'PlusJakartaSans_500Medium', color: '#E8475E', textAlign: 'center' },
+  icebreakerText: { fontSize: 13, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#E8475E', textAlign: 'center' },
   messageList: { padding: 16, gap: 12, paddingBottom: 24 },
   messageRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   messageRowMine: { flexDirection: 'row-reverse' },
@@ -731,11 +867,11 @@ const styles = StyleSheet.create({
   messageBubble: { maxWidth: '75%', borderRadius: 20, overflow: 'hidden' },
   messageBubbleMine: { borderBottomRightRadius: 4 },
   messageBubbleOthers: { backgroundColor: '#FFFFFF', padding: 12, borderRadius: 20, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: '#F0EDEF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
-  messageBubbleGradient: { padding: 12 },
-  messageText: { fontSize: 15, fontFamily: 'PlusJakartaSans_400Regular', color: '#1A1A2E', lineHeight: 22 },
+  messageBubbleGradient: { padding: 12, backgroundColor: '#E8475E' },
+  messageText: { fontSize: 15, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#1A1A2E', lineHeight: 22 },
   messageTextMine: { color: '#FFFFFF' },
-  timeMine: { fontSize: 10, fontFamily: 'PlusJakartaSans_400Regular', color: 'rgba(255,255,255,0.7)', marginTop: 4, textAlign: 'right' },
-  timeOthers: { fontSize: 10, fontFamily: 'PlusJakartaSans_400Regular', color: '#A0A0B0', marginTop: 4, textAlign: 'right' },
+  timeMine: { fontSize: 10, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: 'rgba(255,255,255,0.7)', marginTop: 4, textAlign: 'right' },
+  timeOthers: { fontSize: 10, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#A0A0B0', marginTop: 4, textAlign: 'right' },
   timeOnly: { fontSize: 10, paddingHorizontal: 8, paddingBottom: 4 },
   messageImage: { width: 220, height: 160, borderRadius: 16, marginBottom: 4 },
   dateCardWrapper: { marginVertical: 8, width: '85%' },
@@ -744,64 +880,76 @@ const styles = StyleSheet.create({
   dateCardInner: { borderRadius: 20, padding: 16, borderWidth: 1.5, borderColor: '#FDDDE3', shadowColor: '#E8475E', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 },
   dateCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   dateCardEmoji: { fontSize: 28 },
-  dateCardType: { fontSize: 11, fontFamily: 'PlusJakartaSans_700Bold', color: '#E8475E', textTransform: 'uppercase', letterSpacing: 0.6 },
-  dateCardActivity: { fontSize: 17, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E' },
+  dateCardType: { fontSize: 11, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#E8475E', textTransform: 'uppercase', letterSpacing: 0.6 },
+  dateCardActivity: { fontSize: 17, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E' },
   dateCardDetails: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 10, gap: 6, marginBottom: 12 },
   dateDetailRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dateDetailText: { fontSize: 13, fontFamily: 'PlusJakartaSans_500Medium', color: '#1A1A2E' },
+  dateDetailText: { fontSize: 13, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#1A1A2E' },
   dateCardActions: { marginTop: 4 },
   dateAcceptBtn: { backgroundColor: '#E8475E', paddingVertical: 12, borderRadius: 14, alignItems: 'center' },
-  dateAcceptBtnText: { color: '#FFFFFF', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
+  dateAcceptBtnText: { color: '#FFFFFF', fontFamily: 'DMSans_700Bold', fontWeight: '700', fontSize: 14 },
   dateSentPill: { alignSelf: 'center', backgroundColor: '#FFF0ED', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-  dateSentPillText: { fontSize: 12, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#E8475E' },
+  dateSentPillText: { fontSize: 12, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#E8475E' },
   dateCardTime: { fontSize: 10, color: '#A0A0B0', textAlign: 'right', marginTop: 8 },
   uploadingBar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#FFF0ED' },
-  uploadingBarText: { fontSize: 12, fontFamily: 'PlusJakartaSans_500Medium', color: '#E8475E' },
+  uploadingBarText: { fontSize: 12, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#E8475E' },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 12, paddingBottom: Platform.OS === 'ios' ? 28 : 12, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F0EDEF' },
   attachBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC' },
   dateActionBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF0ED' },
-  input: { flex: 1, backgroundColor: '#FFFBF9', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, fontFamily: 'PlusJakartaSans_400Regular', color: '#1A1A2E', maxHeight: 100, borderWidth: 1.5, borderColor: '#F0EDEF' },
-  sendButton: { width: 40, height: 40, borderRadius: 20, overflow: 'hidden' },
-  sendButtonDisabled: { opacity: 0.5 },
-  sendButtonGradient: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
+  input: { flex: 1, backgroundColor: '#FFFBF9', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#1A1A2E', maxHeight: 100, borderWidth: 1.5, borderColor: '#F0EDEF' },
+  sendButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E8475E', alignItems: 'center', justifyContent: 'center' },
+  sendButtonDisabled: { backgroundColor: '#E0D8DA' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   dateModalCard: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40 },
   modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
-  modalTitle: { fontSize: 22, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E' },
-  modalSubtitle: { fontSize: 13, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B6B7B', marginTop: 2 },
+  modalTitle: { fontSize: 22, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E' },
+  modalSubtitle: { fontSize: 13, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#6B6B7B', marginTop: 2 },
   modalCloseBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F4F2F3', alignItems: 'center', justifyContent: 'center' },
-  pickerLabel: { fontSize: 13, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E', marginBottom: 8 },
+  pickerLabel: { fontSize: 13, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E', marginBottom: 8 },
   activityList: { marginBottom: 16 },
   activityPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', marginRight: 10 },
   activityPillSelected: { backgroundColor: '#FDDDE3', borderColor: '#E8475E' },
   activityEmoji: { fontSize: 16 },
-  activityLabel: { fontSize: 13, fontFamily: 'PlusJakartaSans_500Medium', color: '#64748B' },
-  activityLabelSelected: { color: '#E8475E', fontFamily: 'PlusJakartaSans_700Bold' },
-  modalInput: { backgroundColor: '#F8FAFC', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontFamily: 'PlusJakartaSans_400Regular', color: '#1A1A2E', borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16 },
+  activityLabel: { fontSize: 13, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#64748B' },
+  activityLabelSelected: { color: '#E8475E', fontFamily: 'DMSans_700Bold', fontWeight: '700' },
+  modalInput: { backgroundColor: '#F8FAFC', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#1A1A2E', borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16 },
   timePillGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
   timePill: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0' },
   timePillSelected: { backgroundColor: '#FDDDE3', borderColor: '#E8475E' },
-  timePillText: { fontSize: 12, fontFamily: 'PlusJakartaSans_500Medium', color: '#64748B' },
-  timePillTextSelected: { color: '#E8475E', fontFamily: 'PlusJakartaSans_700Bold' },
-  sendDateBtn: { borderRadius: 18, overflow: 'hidden' },
-  sendDateGradient: { paddingVertical: 16, alignItems: 'center' },
-  sendDateBtnText: { color: '#FFFFFF', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 16 },
+  timePillText: { fontSize: 12, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#64748B' },
+  timePillTextSelected: { color: '#E8475E', fontFamily: 'DMSans_700Bold', fontWeight: '700' },
+  sendDateBtn: { borderRadius: 18, backgroundColor: '#E8475E', paddingVertical: 16, alignItems: 'center' },
+  sendDateBtnText: { color: '#FFFFFF', fontFamily: 'DMSans_700Bold', fontWeight: '700', fontSize: 16 },
   profileModalCard: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40, maxHeight: '80%' },
   fullProfilePhoto: { width: '100%', height: 280, borderRadius: 20, marginBottom: 16 },
   profileDetailsBox: { gap: 8 },
-  profileFullName: { fontSize: 24, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E' },
-  profileCityText: { fontSize: 14, fontFamily: 'PlusJakartaSans_500Medium', color: '#6B6B7B' },
+  profileFullName: { fontSize: 24, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E' },
+  profileCityText: { fontSize: 14, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#6B6B7B' },
   profileGoalBadge: { alignSelf: 'flex-start', backgroundColor: '#FDDDE3', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 6, marginVertical: 4 },
-  profileGoalBadgeText: { fontSize: 12, fontFamily: 'PlusJakartaSans_700Bold', color: '#E8475E' },
+  profileGoalBadgeText: { fontSize: 12, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#E8475E' },
   profileBioBox: { backgroundColor: '#FFFBF9', padding: 14, borderRadius: 14, borderWidth: 1, borderColor: '#F0EDEF' },
-  profileBioText: { fontSize: 14, fontFamily: 'PlusJakartaSans_400Regular', color: '#4A4A5A', lineHeight: 22 },
+  profileBioText: { fontSize: 14, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#4A4A5A', lineHeight: 22 },
   menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   menuCard: { width: '100%', maxWidth: 320, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, gap: 8 },
-  menuTitle: { fontSize: 16, fontFamily: 'PlusJakartaSans_700Bold', color: '#1A1A2E', marginBottom: 8 },
+  menuTitle: { fontSize: 16, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E', marginBottom: 8 },
   menuOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
-  menuOptionText: { fontSize: 15, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#1A1A2E' },
+  menuOptionText: { fontSize: 15, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#1A1A2E' },
   menuDivider: { height: 1, backgroundColor: '#F0EDEF', marginVertical: 4 },
   lightboxBackdrop: { flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' },
   lightboxClose: { position: 'absolute', top: 50, right: 20, zIndex: 10, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   lightboxImage: { width: '100%', height: '80%' },
+  vowPendingBadge: { backgroundColor: '#F0E6FF', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: '#DEC9FC' },
+  vowPendingText: { fontSize: 12, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#7C3AED' },
+  incomingVowBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3D1DC' },
+  incomingVowTitle: { fontSize: 13, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E' },
+  incomingVowSub: { fontSize: 11, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#6B6B7B', marginTop: 1 },
+  incomingVowBtns: { flexDirection: 'row', gap: 6 },
+  vowDeclineSmall: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5DDE2' },
+  vowDeclineSmallText: { fontSize: 12, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#6B6B7B' },
+  vowAcceptSmall: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 12, backgroundColor: '#E8475E' },
+  vowAcceptSmallText: { fontSize: 12, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#FFFFFF' },
+  lockOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 36 },
+  lockCircle: { width: 112, height: 112, borderRadius: 56, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  lockTitle: { fontSize: 34, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.4, marginBottom: 12, textAlign: 'center' },
+  lockSubtitle: { fontSize: 16, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: 'rgba(255,255,255,0.92)', textAlign: 'center', lineHeight: 26 },
 })
