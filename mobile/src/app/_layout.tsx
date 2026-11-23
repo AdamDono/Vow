@@ -13,6 +13,7 @@ import {
 } from '@expo-google-fonts/dm-sans'
 
 import vowConfig from '../../tamagui.config'
+import { subscribeToNotificationTaps } from '../lib/notifications'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -29,6 +30,10 @@ export default function RootLayout() {
       SplashScreen.hideAsync()
     }
   }, [fontsLoaded, fontError])
+
+  useEffect(() => {
+    return subscribeToNotificationTaps()
+  }, [])
 
   if (!fontsLoaded && !fontError) return null
 

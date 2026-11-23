@@ -14,6 +14,7 @@ import { eq, or, and, desc } from 'drizzle-orm'
 import { authMiddleware } from '../middleware/auth.js'
 import { AppEnv } from '../types/index.js'
 import { emitToUser } from '../ws/hub.js'
+import { sendPushToUser } from '../lib/push.js'
 
 export const couplesRouter = new Hono<AppEnv>()
 
@@ -248,6 +249,16 @@ couplesRouter.post('/checkin', async (c) => {
       type: 'couple:checkin',
       revealed: shouldUnseal,
       harmonyScore: updatedHarmony,
+    })
+
+    const selfProfile = await db.query.profiles.findFirst({ where: eq(profiles.userId, authUser.userId) })
+    const selfName = selfProfile?.firstName || 'Your partner'
+    sendPushToUser(partnerId, {
+      title: shouldUnseal ? '🔓 Reflections Unlocked!' : '🔒 Daily Check-In Waiting',
+      body: shouldUnseal
+        ? `Both you and ${selfName} checked in today! Tap to read each other's reflections.`
+        : `${selfName} submitted today's double-blind check-in. Submit yours to unlock!`,
+      data: { route: '/(couple)/dashboard' },
     })
 
     return c.json({
@@ -806,11 +817,16 @@ couplesRouter.post('/date-spots/plan', async (c) => {
       })
       .returning()
 
-    // 3. Real-time push to partner over WebSockets
+    // 3. Real-time push to partner over WebSockets + Push Notification
     emitToUser(partnerId, {
       type: 'chat:message',
       conversationId: coupleConv.id,
       message: newMsg,
+    })
+    sendPushToUser(partnerId, {
+      title: '🍽️ Date Night Planned!',
+      body: `${spotName}${dateTimeLabel ? ` • ${dateTimeLabel}` : ''}`,
+      data: { route: '/(couple)/chat' },
     })
 
     return c.json({

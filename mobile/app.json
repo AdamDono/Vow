@@ -1,22 +1,36 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Vow",
+    "slug": "vow-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
-    "userInterfaceStyle": "automatic",
+    "scheme": "vow",
+    "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "supportsTablet": false,
+      "bundleIdentifier": "app.vow.mobile",
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Vow uses your front camera for a quick 10-second facial liveness check to verify real members and prevent catfishing.",
+        "NSPhotoLibraryUsageDescription": "Vow accesses your photo library so you can upload profile photos, chat photos, and shared couple memories.",
+        "NSLocationWhenInUseUsageDescription": "Vow uses your city location to discover nearby singles and real local date night spots."
+      }
     },
     "android": {
+      "package": "app.vow.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FFFBF9",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "permissions": [
+        "CAMERA",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "POST_NOTIFICATIONS"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -28,12 +42,31 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#FFFBF9",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 120
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Vow to access your camera for live facial verification."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Vow to use your city for nearby matches and date night spots."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#E8475E"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

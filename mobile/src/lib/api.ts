@@ -100,6 +100,16 @@ export const api = {
         '/api/auth/verify-liveness',
         { method: 'POST', body: JSON.stringify(payload) }
       ),
+    registerPushToken: (payload: { token: string; platform: string }) =>
+      apiRequest<{ success: boolean }>('/api/auth/push-token', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    removePushToken: (token: string) =>
+      apiRequest<{ success: boolean }>('/api/auth/push-token', {
+        method: 'DELETE',
+        body: JSON.stringify({ token }),
+      }),
     me: () => apiRequest<any>('/api/auth/me'),
   },
 

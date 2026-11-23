@@ -12,6 +12,7 @@ import { authMiddleware } from '../middleware/auth.js'
 import { AppEnv } from '../types/index.js'
 import { emitToUser, emitToUsers } from '../ws/hub.js'
 import { getUserPlatformHistory } from '../lib/history.js'
+import { sendPushToUser } from '../lib/push.js'
 
 export const chatRouter = new Hono<AppEnv>()
 
@@ -184,12 +185,40 @@ chatRouter.post('/:conversationId/messages', async (c) => {
       })
       .returning()
 
-    // Real-time push to the conversation partner
+    // Real-time push to the conversation partner (WebSockets + Mobile Push Notification)
     emitToUser(resolved.partnerId, {
       type: 'chat:message',
       conversationId: resolved.conv.id,
       matchId: resolved.conv.matchId,
       message: newMsg,
+    })
+
+    const senderUser = await db.query.users.findFirst({
+      where: eq(users.id, authUser.userId),
+      with: { profile: true },
+    })
+    const senderName = senderUser?.profile?.firstName || 'Vow'
+    let pushPreview = newMsg.text
+    if (pushPreview.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(pushPreview)
+        if (parsed.type === 'date_proposal') {
+          pushPreview = `Sent a Date Proposal: ${parsed.emoji || '🗓️'} ${parsed.activity}`
+        }
+      } catch (_) {}
+    } else if (newMsg.mediaUrl && pushPreview === '📷 Photo') {
+      pushPreview = 'Sent you a photo 📷'
+    }
+
+    sendPushToUser(resolved.partnerId, {
+      title: resolved.conv.type === 'couple' ? `${senderName} ♥` : senderName,
+      body: pushPreview.slice(0, 120),
+      data: {
+        route:
+          resolved.conv.type === 'couple'
+            ? '/(couple)/chat'
+            : `/(single)/chat/${resolved.conv.id}`,
+      },
     })
 
     return c.json({ message: newMsg })

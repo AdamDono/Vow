@@ -90,15 +90,19 @@
   - Opens real venue locations in Google Maps and lets couples schedule a date night that automatically saves into **Shared Vows** AND drops a live real-time message into their **Private Vow Channel** over WebSockets.
 - **BIP Post #9:** Ready to Publish.
 
+### Milestone 10: Push Notifications, Cloud Deploy Config & Beta Launch Readiness *(Just Completed!)*
+- **Native Push Notifications (`backend/src/lib/push.ts`, `mobile/src/lib/notifications.ts`, `push_tokens` table on Neon):**
+  - Added `POST /api/auth/push-token` and `DELETE /api/auth/push-token` + automatic Expo Push Token registration on native login/startup.
+  - Real-time push alerts via Expo Push Service (100% free) wired for: **New Match ♥**, **Single & Couple Chat Messages**, **New Vow Proposal 💍**, **Vow Locked In 💍**, **Double-Blind Check-In Waiting / Unlocked 🔓**, and **Date Night Planned 🍽️**, plus deep-link tap navigation & auto-pruning of stale tokens.
+- **Production Cloud Deployment & EAS Beta Config:**
+  - Added production multi-stage `backend/Dockerfile`, `backend/.env.example`, root `render.yaml` (1-click Render deploy with native WebSockets), and fixed `backend/package.json` `start` target (`dist/index.js`).
+  - Upgraded `mobile/app.json` from default template to **Vow** branding (`app.vow.mobile`, custom `#FFFBF9` splash, iOS/Android Camera, Photos, Location & Push permission strings).
+  - Created `mobile/eas.json` (`development`, `preview` Android APK, `production` TestFlight/Play Store) and step-by-step **[docs/LAUNCH_GUIDE.md](file:///Users/dam1mac89/Desktop/Vow%20/docs/LAUNCH_GUIDE.md)**.
+- **BIP Post #10:** Ready to Publish once beta link is live!
+
 ---
 
-## 🚀 What to Build Next (Prioritized Roadmap)
-
-### Milestone 10: Push Notifications, Production Cloud Deploy & Beta Launch *(Recommended Next)*
-1. **Push Notifications (Expo Notifications):** Instant alerts for new matches, messages, incoming Vow proposals, and 8:00 PM double-blind check-in reminders.
-2. **Backend Hosting:** Deploy Hono + WebSocket API to Railway / Render / Fly.io with production env vars (`JWT_SECRET`, `DATABASE_URL`, `UPLOADTHING_TOKEN`).
-3. **EAS Builds & TestFlight / Play Store Beta:** Configure `eas.json` and ship v1.0 beta to the first 50–100 testers.
-- **Target BIP Post #10:** *"It's Live! Launching Vow to Our First 100 Beta Testers"*
+## 🚀 Post-Beta Roadmap
 
 ### Milestone 11 (Post-Beta): Revenue & Partner Venues
 - **Vow Plus Subscriptions:** RevenueCat (Apple IAP / Google Play Billing) for Single & Couple premium tiers.

@@ -2,6 +2,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
 import { useEffect } from 'react'
 import { api, hydrateAuthToken, setAuthToken } from '../lib/api'
+import { registerForPushNotificationsAsync } from '../lib/notifications'
 
 // Entry point: hydrate SecureStore/localStorage token & route straight into Single or Couples Mode
 export default function Index() {
@@ -18,6 +19,10 @@ export default function Index() {
       try {
         const meRes = await api.auth.me()
         if (!active) return
+
+        if (meRes?.user) {
+          registerForPushNotificationsAsync().catch(() => {})
+        }
 
         if (meRes?.user?.relationshipStatus === 'coupled') {
           router.replace('/(couple)/dashboard')

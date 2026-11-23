@@ -12,6 +12,7 @@ import { eq, and, or, desc } from 'drizzle-orm'
 import { authMiddleware } from '../middleware/auth.js'
 import { AppEnv } from '../types/index.js'
 import { emitToUser, emitToUsers } from '../ws/hub.js'
+import { sendPushToUser } from '../lib/push.js'
 
 export const proposalsRouter = new Hono<AppEnv>()
 
@@ -165,6 +166,13 @@ proposalsRouter.post('/send', async (c) => {
     emitToUser(receiverId, {
       type: 'proposal:received',
       invite,
+    })
+
+    const senderSummary = await formatUserSummary(authUser.userId)
+    sendPushToUser(receiverId, {
+      title: '💍 New Vow Proposal!',
+      body: `${senderSummary.name} asked you to commit and enter Couples Mode together.`,
+      data: { route: '/(single)/matches', inviteId: invite.id },
     })
 
     return c.json({
@@ -329,11 +337,18 @@ proposalsRouter.post('/accept', async (c) => {
       eventDate: today,
     })
 
-    // 8. Push instant Commitment Lock event to BOTH partners over WebSockets
+    // 8. Push instant Commitment Lock event to BOTH partners over WebSockets + Push Notification
     emitToUsers([invite.senderId, invite.receiverId], {
       type: 'proposal:accepted',
       relationshipId: relationship.id,
       conversationId: coupleConv.id,
+    })
+
+    const acceptorSummary = await formatUserSummary(authUser.userId)
+    sendPushToUser(invite.senderId, {
+      title: '💍 Vow Locked In!',
+      body: `${acceptorSummary.name} accepted your Vow! Welcome to Couples Mode.`,
+      data: { route: '/(couple)/dashboard', relationshipId: relationship.id },
     })
 
     return c.json({

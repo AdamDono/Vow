@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { db, client as sqlClient } from '../db/client.js'
-import { users, profiles, userPhotos, userInterests, userReports } from '../db/schema/index.js'
+import { users, profiles, userPhotos, userInterests, userReports, pushTokens } from '../db/schema/index.js'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
@@ -318,6 +318,52 @@ authRouter.post('/verify-liveness', authMiddleware, async (c) => {
     })
   } catch (err: any) {
     return c.json({ error: err.message || 'Verification failed' }, 500)
+  }
+})
+
+// POST /api/auth/push-token — Register/refresh Expo Push Token for current device
+authRouter.post('/push-token', authMiddleware, async (c) => {
+  try {
+    const authUser = c.get('user')
+    const { token, platform } = await c.req.json()
+
+    if (!token || typeof token !== 'string') {
+      return c.json({ error: 'Valid push token required' }, 400)
+    }
+
+    await db
+      .insert(pushTokens)
+      .values({
+        userId: authUser.userId,
+        token: token.trim(),
+        platform: platform || 'unknown',
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: pushTokens.token,
+        set: {
+          userId: authUser.userId,
+          platform: platform || 'unknown',
+          updatedAt: new Date(),
+        },
+      })
+
+    return c.json({ success: true })
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to save push token' }, 500)
+  }
+})
+
+// DELETE /api/auth/push-token — Unregister device token on logout
+authRouter.delete('/push-token', authMiddleware, async (c) => {
+  try {
+    const { token } = await c.req.json().catch(() => ({}))
+    if (token) {
+      await db.delete(pushTokens).where(eq(pushTokens.token, String(token)))
+    }
+    return c.json({ success: true })
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to remove push token' }, 500)
   }
 })
 

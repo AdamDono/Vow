@@ -4,6 +4,7 @@ import { router } from 'expo-router'
 import { useState, useEffect } from 'react'
 import * as WebBrowser from 'expo-web-browser'
 import { api, setAuthToken } from '../../lib/api'
+import { registerForPushNotificationsAsync } from '../../lib/notifications'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
@@ -56,6 +57,7 @@ export default function LoginScreen() {
 
       if (res.token) {
         setAuthToken(res.token)
+        registerForPushNotificationsAsync().catch(() => {})
         if (res.user?.relationshipStatus === 'coupled') {
           router.replace('/(couple)/dashboard')
         } else {

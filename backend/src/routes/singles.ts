@@ -6,6 +6,7 @@ import { authMiddleware } from '../middleware/auth.js'
 import { AppEnv } from '../types/index.js'
 import { emitToUser } from '../ws/hub.js'
 import { getUserPlatformHistory } from '../lib/history.js'
+import { sendPushToUser } from '../lib/push.js'
 
 export const singlesRouter = new Hono<AppEnv>()
 
@@ -176,11 +177,17 @@ singlesRouter.post('/swipe', async (c) => {
           matchId: newMatch.id,
         })
 
-        // Notify the other user in real time
+        // Notify the other user in real time (WebSockets + Push Notification)
         emitToUser(targetId, {
           type: 'single:match',
           matchId: newMatch.id,
           partnerId: authUser.userId,
+        })
+        const swiperProfile = await db.query.profiles.findFirst({ where: eq(profiles.userId, authUser.userId) })
+        sendPushToUser(targetId, {
+          title: "It's a Vow Match! ♥",
+          body: `You and ${swiperProfile?.firstName || 'someone special'} liked each other. Say hello!`,
+          data: { route: '/(single)/matches', matchId: newMatch.id },
         })
       }
     }

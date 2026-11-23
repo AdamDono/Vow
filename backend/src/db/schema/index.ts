@@ -168,6 +168,16 @@ export const userReports = pgTable('user_reports', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
+// 16. PUSH TOKENS (Expo Push Notifications)
+export const pushTokens = pgTable('push_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  token: text('token').unique().notNull(),
+  platform: text('platform').default('unknown').notNull(), // 'ios' | 'android'
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
 // RELATIONS DEFINITIONS
 export const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(profiles, {

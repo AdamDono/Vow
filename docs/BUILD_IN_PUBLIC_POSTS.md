@@ -571,6 +571,32 @@ Drop your go-to date night spot below 👇
 
 ---
 
+# 🚀 POST #10: Vow Beta Is Ready for Real Phones!
+
+**Theme:** Going From Idea to a Full Dual-Mode Relationship OS — Inviting the First 100 Beta Testers.
+
+### 💼 LinkedIn Format (Tight & High-Retention)
+```markdown
+10 milestones ago, Vow was just a note in my phone:
+"Why do dating apps abandon you the second you actually find someone?"
+
+Today, **Vow v1.0 Beta** is ready for real phones. 💍
+
+Here’s everything inside the beta build:
+• **Single Mode:** 60fps swipe physics, multi-filter discovery, 10s live Facial Liveness verification & anonymized Vow Platform History.
+• **Real-Time Intentional Chat:** WebSockets, live typing indicators, photo lightbox & in-chat Date Proposal cards.
+• **The Vow Commitment Lock:** 1 tap locks both of you out of swiping and transforms the entire app into a private Couples OS.
+• **Couples Mode:** Live Harmony Score, double-blind daily check-ins, private couple chat, Memory Vault, Shared Vows & live nearby Date Night Spots — all backed by native push notifications.
+
+I’m opening the **first 50–100 beta spots** (iOS TestFlight + Android APK).
+
+Comment **"VOW"** below if you want early beta access (whether you’re single or testing Couples Mode with your partner) 👇
+
+#BuildInPublic #Startups #ReactNative #IndieHacker #ProductLaunch #DatingApps
+```
+
+---
+
 ## 📅 Roadmap Overview
 
 | Post # | Milestone Covered | Status |
@@ -584,5 +610,5 @@ Drop your go-to date night spot below 👇
 | **Post #7** | 60fps Swipe Physics, WebSockets Real-Time Sync & Native Auth Hardening | **Ready to Publish** |
 | **Post #8** | Facial Liveness Verification & Verified Platform History | **Ready to Publish** |
 | **Post #9** | Live Nearby Date Night Spots & Couple Date Planner | **Ready to Publish** |
-| **Post #10** | Push Notifications, Cloud Deploy & TestFlight Beta Launch | *Upcoming* |
+| **Post #10** | Push Notifications, Cloud Deploy & TestFlight Beta Launch | **Ready to Publish** |
 
