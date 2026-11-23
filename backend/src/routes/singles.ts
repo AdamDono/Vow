@@ -5,6 +5,7 @@ import { eq, ne, and, or, desc } from 'drizzle-orm'
 import { authMiddleware } from '../middleware/auth.js'
 import { AppEnv } from '../types/index.js'
 import { emitToUser } from '../ws/hub.js'
+import { getUserPlatformHistory } from '../lib/history.js'
 
 export const singlesRouter = new Hono<AppEnv>()
 
@@ -55,7 +56,7 @@ singlesRouter.get('/feed', async (c) => {
       limit: 50,
     })
 
-    const filtered = candidates
+    const filteredRaw = candidates
       .filter((cand) => cand.profile !== null)
       .filter((cand) => {
         // Respect Discovery Visibility pause & blocks
@@ -81,18 +82,29 @@ singlesRouter.get('/feed', async (c) => {
 
         return true
       })
-      .map((c) => ({
-        id: c.id,
-        name: `${c.profile?.firstName || 'User'}`,
-        age: c.profile?.age || 25,
-        city: c.profile?.city || 'Johannesburg, SA',
-        bio: c.profile?.bio || '',
-        lookingFor: c.profile?.lookingFor || 'Long-term relationship',
-        vouchRating: c.profile?.vouchRating || 95,
-        isVerified: c.profile?.isVerified ?? true,
-        photos: c.photos.map((p) => p.url),
-        interests: c.interests.map((i) => i.interest),
-      }))
+
+    const filtered = await Promise.all(
+      filteredRaw.map(async (cand) => {
+        const showResume = cand.profile?.datingResumePublic !== false
+        const platformHistory = showResume ? await getUserPlatformHistory(cand.id) : null
+        const sortedPhotos = (cand.photos || []).slice().sort((a, b) => a.orderIndex - b.orderIndex)
+
+        return {
+          id: cand.id,
+          name: `${cand.profile?.firstName || 'User'}`,
+          age: cand.profile?.age || 25,
+          city: cand.profile?.city || 'Johannesburg, SA',
+          bio: cand.profile?.bio || '',
+          lookingFor: cand.profile?.lookingFor || 'Long-term relationship',
+          vouchRating: cand.profile?.vouchRating || 95,
+          isVerified: cand.profile?.isVerified ?? true,
+          livenessVerified: cand.profile?.livenessVerified ?? false,
+          platformHistory,
+          photos: sortedPhotos.map((p) => p.url),
+          interests: cand.interests.map((i) => i.interest),
+        }
+      })
+    )
 
     return c.json({ feed: filtered })
   } catch (err: any) {

@@ -11,6 +11,7 @@ import { eq, desc, or, and } from 'drizzle-orm'
 import { authMiddleware } from '../middleware/auth.js'
 import { AppEnv } from '../types/index.js'
 import { emitToUser, emitToUsers } from '../ws/hub.js'
+import { getUserPlatformHistory } from '../lib/history.js'
 
 export const chatRouter = new Hono<AppEnv>()
 
@@ -103,6 +104,9 @@ chatRouter.get('/conversations', async (c) => {
           } catch (_) {}
         }
 
+        const showResume = partner?.profile?.datingResumePublic !== false
+        const platformHistory = partner?.id && showResume ? await getUserPlatformHistory(partner.id) : null
+
         return {
           id: conv?.id || m.id,
           matchId: m.id,
@@ -113,6 +117,9 @@ chatRouter.get('/conversations', async (c) => {
             city: partner?.profile?.city,
             bio: partner?.profile?.bio,
             lookingFor: partner?.profile?.lookingFor,
+            vouchRating: partner?.profile?.vouchRating ?? 95,
+            livenessVerified: partner?.profile?.livenessVerified ?? false,
+            platformHistory,
             photo: sortedPhotos[0]?.url,
           },
           lastMessage: previewText,

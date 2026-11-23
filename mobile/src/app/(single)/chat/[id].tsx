@@ -35,6 +35,14 @@ interface PartnerInfo {
   city?: string
   bio?: string
   lookingFor?: string
+  vouchRating?: number
+  livenessVerified?: boolean
+  platformHistory?: {
+    completedRelationships: number
+    longestCommitmentDays: number
+    avgHarmonyScore: number | null
+    badgeLabel: string
+  } | null
   interests?: string[]
 }
 
@@ -831,12 +839,34 @@ export default function ChatScreen() {
             <Image source={{ uri: partnerPhoto }} style={styles.fullProfilePhoto} resizeMode="cover" />
 
             <View style={styles.profileDetailsBox}>
-              <Text style={styles.profileFullName}>{partnerName}, {partner?.age || 25}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={styles.profileFullName}>{partnerName}, {partner?.age || 25}</Text>
+                {partner?.livenessVerified ? (
+                  <View style={styles.chatFaceVerifiedPill}>
+                    <Ionicons name="shield-checkmark" size={14} color="#10B981" />
+                    <Text style={styles.chatFaceVerifiedText}>Face Verified</Text>
+                  </View>
+                ) : null}
+              </View>
               <Text style={styles.profileCityText}>📍 {partner?.city || 'Johannesburg, SA'}</Text>
               
               <View style={styles.profileGoalBadge}>
                 <Text style={styles.profileGoalBadgeText}>💍 {partner?.lookingFor || 'Long-term relationship'}</Text>
               </View>
+
+              {partner?.platformHistory ? (
+                <View style={styles.chatHistoryBox}>
+                  <Text style={styles.chatHistoryLabel}>
+                    VOW HISTORY • {partner.platformHistory.badgeLabel.toUpperCase()}
+                  </Text>
+                  <Text style={styles.chatHistoryMeta}>
+                    {partner.platformHistory.completedRelationships} Past Vows •{' '}
+                    {partner.platformHistory.longestCommitmentDays > 0
+                      ? `Longest: ${partner.platformHistory.longestCommitmentDays}d`
+                      : 'Fresh Start'}
+                  </Text>
+                </View>
+              ) : null}
 
               {partner?.bio ? (
                 <View style={styles.profileBioBox}>
@@ -1014,6 +1044,11 @@ const styles = StyleSheet.create({
   profileCityText: { fontSize: 14, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#6B6B7B' },
   profileGoalBadge: { alignSelf: 'flex-start', backgroundColor: '#FDDDE3', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 6, marginVertical: 4 },
   profileGoalBadgeText: { fontSize: 12, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#E8475E' },
+  chatFaceVerifiedPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ECFDF5', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
+  chatFaceVerifiedText: { fontSize: 12, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#059669' },
+  chatHistoryBox: { backgroundColor: '#FAF6FF', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#E8DAFF', gap: 3 },
+  chatHistoryLabel: { fontSize: 10, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#7C3AED', letterSpacing: 0.6 },
+  chatHistoryMeta: { fontSize: 13, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#1A1A2E' },
   profileBioBox: { backgroundColor: '#FFFBF9', padding: 14, borderRadius: 14, borderWidth: 1, borderColor: '#F0EDEF' },
   profileBioText: { fontSize: 14, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#4A4A5A', lineHeight: 22 },
   menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },

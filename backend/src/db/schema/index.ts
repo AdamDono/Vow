@@ -27,6 +27,9 @@ export const profiles = pgTable('profiles', {
   datingResumePublic: boolean('dating_resume_public').default(true),
   discoveryActive: boolean('discovery_active').default(true).notNull(),
   isVerified: boolean('is_verified').default(true),
+  livenessVerified: boolean('liveness_verified').default(false).notNull(),
+  verificationPhotoUrl: text('verification_photo_url'),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })

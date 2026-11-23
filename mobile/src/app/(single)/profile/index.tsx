@@ -15,6 +15,7 @@ export default function ProfileScreen() {
   const [galleryModalVisible, setGalleryModalVisible] = useState(false)
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0)
   const [discoveryActive, setDiscoveryActive] = useState(true)
+  const [datingResumePublic, setDatingResumePublic] = useState(true)
 
   const fetchUserProfile = useCallback(async () => {
     try {
@@ -30,6 +31,9 @@ export default function ProfileScreen() {
         setUser(res.user)
         if (typeof res.user.profile?.discoveryActive === 'boolean') {
           setDiscoveryActive(res.user.profile.discoveryActive)
+        }
+        if (typeof res.user.profile?.datingResumePublic === 'boolean') {
+          setDatingResumePublic(res.user.profile.datingResumePublic)
         }
       }
     } catch (err) {
@@ -60,6 +64,15 @@ export default function ProfileScreen() {
     }
   }
 
+  const handleToggleDatingResume = async (nextVal: boolean) => {
+    setDatingResumePublic(nextVal)
+    try {
+      await api.auth.updateProfile({ datingResumePublic: nextVal })
+    } catch {
+      setDatingResumePublic(!nextVal)
+    }
+  }
+
   const handleLogout = () => {
     setAuthToken(null)
     router.replace('/(auth)/login')
@@ -68,6 +81,14 @@ export default function ProfileScreen() {
   const profile = user?.profile || {}
   const trustScore = profile.vouchRating ?? 100
   const reportsCount = user?.reportsCount ?? 0
+  const livenessVerified = Boolean(profile.livenessVerified)
+  const platformHistory = user?.platformHistory || {
+    completedRelationships: 0,
+    longestCommitmentDays: 0,
+    totalCommittedDays: 0,
+    avgHarmonyScore: null,
+    badgeLabel: 'Fresh Start on Vow',
+  }
   const displayName = profile.firstName
     ? `${profile.firstName} ${profile.lastName || ''}`.trim()
     : user?.email?.split('@')[0] || 'Vow Member'
@@ -158,9 +179,9 @@ export default function ProfileScreen() {
           style={StyleSheet.absoluteFill}
         />
 
-        <View style={styles.verifiedBadge}>
-          <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
-          <Text style={styles.verifiedText}>Google Verified</Text>
+        <View style={[styles.verifiedBadge, !livenessVerified && styles.unverifiedBadge]}>
+          <Ionicons name={livenessVerified ? 'shield-checkmark' : 'checkmark-circle'} size={14} color="#FFFFFF" />
+          <Text style={styles.verifiedText}>{livenessVerified ? 'Face Verified' : 'Email Verified'}</Text>
         </View>
 
         {photosList.length > 1 && (
@@ -211,6 +232,85 @@ export default function ProfileScreen() {
               ? '📸 Add 1 more photo to boost your match rate by 3x.'
               : 'Add a short bio and interests to reach 100% profile strength.'}
           </Text>
+        </View>
+      </View>
+
+      {/* Facial Liveness Verification Card */}
+      <View style={styles.section}>
+        <View style={styles.verifyCard}>
+          <View style={styles.verifyTopRow}>
+            <View style={[styles.verifyIconWrap, livenessVerified && styles.verifyIconWrapDone]}>
+              <Ionicons
+                name={livenessVerified ? 'shield-checkmark' : 'scan-outline'}
+                size={22}
+                color={livenessVerified ? '#10B981' : '#E8475E'}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.verifyTitle}>
+                {livenessVerified ? 'Facial Liveness Verified' : 'Verify Your Identity'}
+              </Text>
+              <Text style={styles.verifySub}>
+                {livenessVerified
+                  ? 'Your live selfie check passed. Matches see your Face Verified shield.'
+                  : 'Complete a 10-second live face check to unlock the Face Verified badge.'}
+              </Text>
+            </View>
+          </View>
+          <Pressable
+            style={livenessVerified ? styles.reverifyBtn : styles.verifyCtaBtn}
+            onPress={() => router.push('/verify' as any)}
+          >
+            <Text style={livenessVerified ? styles.reverifyBtnText : styles.verifyCtaBtnText}>
+              {livenessVerified ? 'Re-verify Selfie Check' : 'Start 10s Face Check'}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Vow Platform History ("Dating Resume") */}
+      <View style={styles.section}>
+        <View style={styles.sectionTitleRow}>
+          <Text style={styles.sectionTitle}>Vow Platform History</Text>
+          <View style={styles.resumeBadge}>
+            <Text style={styles.resumeBadgeText}>{platformHistory.badgeLabel}</Text>
+          </View>
+        </View>
+        <View style={styles.historyCard}>
+          <View style={styles.historyItem}>
+            <Text style={styles.historyValue}>{platformHistory.completedRelationships}</Text>
+            <Text style={styles.historyLabel}>Past Vows</Text>
+          </View>
+          <View style={styles.historySep} />
+          <View style={styles.historyItem}>
+            <Text style={styles.historyValue}>
+              {platformHistory.longestCommitmentDays > 0 ? `${platformHistory.longestCommitmentDays}d` : '—'}
+            </Text>
+            <Text style={styles.historyLabel}>Longest Vow</Text>
+          </View>
+          <View style={styles.historySep} />
+          <View style={styles.historyItem}>
+            <Text style={styles.historyValue}>
+              {platformHistory.avgHarmonyScore ? `${platformHistory.avgHarmonyScore}%` : '—'}
+            </Text>
+            <Text style={styles.historyLabel}>Avg Harmony</Text>
+          </View>
+        </View>
+        <View style={[styles.visibilityCard, { marginTop: 10 }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.visibilityTitle}>Show Dating Resume on Profile</Text>
+            <Text style={styles.visibilitySub}>
+              {datingResumePublic
+                ? 'Matches can see your anonymized Vow commitment track record.'
+                : 'Your Vow relationship history is hidden from other singles.'}
+            </Text>
+          </View>
+          <Switch
+            value={datingResumePublic}
+            onValueChange={handleToggleDatingResume}
+            trackColor={{ false: '#F0EDEF', true: '#E8475E' }}
+            thumbColor="#FFFFFF"
+          />
         </View>
       </View>
 
@@ -469,6 +569,19 @@ const styles = StyleSheet.create({
   avatarInitials: { fontSize: 64, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#FFFFFF' },
   avatarSubText: { fontSize: 18, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: 'rgba(255,255,255,0.9)' },
   verifiedBadge: { position: 'absolute', bottom: 16, left: 16, backgroundColor: '#10B981', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  unverifiedBadge: { backgroundColor: '#1A1A2E' },
+  verifyCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, borderWidth: 1, borderColor: '#F0EDEF', gap: 14 },
+  verifyTopRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  verifyIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#FFF0ED', alignItems: 'center', justifyContent: 'center' },
+  verifyIconWrapDone: { backgroundColor: '#ECFDF5' },
+  verifyTitle: { fontSize: 16, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E' },
+  verifySub: { fontSize: 13, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#6B6B7B', marginTop: 2, lineHeight: 19 },
+  verifyCtaBtn: { backgroundColor: '#E8475E', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+  verifyCtaBtnText: { fontSize: 14, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#FFFFFF' },
+  reverifyBtn: { backgroundColor: '#F4F2F3', borderRadius: 14, paddingVertical: 12, alignItems: 'center' },
+  reverifyBtnText: { fontSize: 13, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#6B6B7B' },
+  resumeBadge: { backgroundColor: '#F0E6FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  resumeBadgeText: { fontSize: 11, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#7C3AED' },
   verifiedText: { fontSize: 12, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#FFFFFF' },
   photoCountBadge: { position: 'absolute', bottom: 16, right: 16, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 5 },
   photoCountText: { fontSize: 12, fontFamily: 'DMSans_600SemiBold', fontWeight: '600', color: '#FFFFFF' },

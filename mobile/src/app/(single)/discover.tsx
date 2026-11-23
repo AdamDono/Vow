@@ -29,6 +29,14 @@ interface Candidate {
   lookingFor: string
   vouchRating: number
   isVerified: boolean
+  livenessVerified?: boolean
+  platformHistory?: {
+    completedRelationships: number
+    longestCommitmentDays: number
+    totalCommittedDays: number
+    avgHarmonyScore: number | null
+    badgeLabel: string
+  } | null
   photos: string[]
   interests: string[]
 }
@@ -656,9 +664,15 @@ export default function DiscoverScreen() {
                     <Text style={styles.inspectFullName}>
                       {inspectModal.name}, {inspectModal.age}
                     </Text>
-                    <View style={styles.verifiedBadge}>
-                      <Ionicons name="checkmark-circle" size={18} color="#E8475E" />
-                      <Text style={styles.verifiedText}>Verified</Text>
+                    <View style={[styles.verifiedBadge, inspectModal.livenessVerified && styles.faceVerifiedBadge]}>
+                      <Ionicons
+                        name={inspectModal.livenessVerified ? 'shield-checkmark' : 'checkmark-circle'}
+                        size={16}
+                        color={inspectModal.livenessVerified ? '#10B981' : '#E8475E'}
+                      />
+                      <Text style={[styles.verifiedText, inspectModal.livenessVerified && { color: '#059669' }]}>
+                        {inspectModal.livenessVerified ? 'Face Verified' : 'Verified'}
+                      </Text>
                     </View>
                   </View>
 
@@ -671,6 +685,43 @@ export default function DiscoverScreen() {
                     <Text style={styles.inspectScoreLabel}>Vow Trust Rating</Text>
                     <Text style={styles.inspectScoreValue}>★ {inspectModal.vouchRating} / 100</Text>
                   </View>
+
+                  {inspectModal.platformHistory ? (
+                    <View style={styles.inspectHistoryCard}>
+                      <View style={styles.inspectHistoryHeader}>
+                        <Text style={styles.inspectSectionTitle}>Vow Platform History</Text>
+                        <View style={styles.inspectHistoryBadge}>
+                          <Text style={styles.inspectHistoryBadgeText}>
+                            {inspectModal.platformHistory.badgeLabel}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.inspectHistoryRow}>
+                        <View style={styles.inspectHistoryStat}>
+                          <Text style={styles.inspectHistoryVal}>
+                            {inspectModal.platformHistory.completedRelationships}
+                          </Text>
+                          <Text style={styles.inspectHistoryLbl}>Past Vows</Text>
+                        </View>
+                        <View style={styles.inspectHistoryStat}>
+                          <Text style={styles.inspectHistoryVal}>
+                            {inspectModal.platformHistory.longestCommitmentDays > 0
+                              ? `${inspectModal.platformHistory.longestCommitmentDays}d`
+                              : 'Fresh'}
+                          </Text>
+                          <Text style={styles.inspectHistoryLbl}>Longest Vow</Text>
+                        </View>
+                        <View style={styles.inspectHistoryStat}>
+                          <Text style={styles.inspectHistoryVal}>
+                            {inspectModal.platformHistory.avgHarmonyScore
+                              ? `${inspectModal.platformHistory.avgHarmonyScore}%`
+                              : '—'}
+                          </Text>
+                          <Text style={styles.inspectHistoryLbl}>Avg Harmony</Text>
+                        </View>
+                      </View>
+                    </View>
+                  ) : null}
 
                   <View style={styles.inspectSection}>
                     <Text style={styles.inspectSectionTitle}>Looking For</Text>
@@ -833,7 +884,16 @@ const styles = StyleSheet.create({
   inspectNameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   inspectFullName: { fontSize: 26, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E' },
   verifiedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFEBF0', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  faceVerifiedBadge: { backgroundColor: '#ECFDF5' },
   verifiedText: { fontSize: 12, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#E8475E' },
+  inspectHistoryCard: { backgroundColor: '#FAF6FF', borderRadius: 16, padding: 14, gap: 10, borderWidth: 1, borderColor: '#E8DAFF' },
+  inspectHistoryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  inspectHistoryBadge: { backgroundColor: '#F0E6FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
+  inspectHistoryBadgeText: { fontSize: 11, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#7C3AED' },
+  inspectHistoryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  inspectHistoryStat: { flex: 1, alignItems: 'center' },
+  inspectHistoryVal: { fontSize: 16, fontFamily: 'DMSans_700Bold', fontWeight: '700', color: '#1A1A2E' },
+  inspectHistoryLbl: { fontSize: 11, fontFamily: 'DMSans_400Regular', fontWeight: '400', color: '#8E8E9E', marginTop: 2 },
   inspectLocationRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   inspectLocationText: { fontSize: 15, fontFamily: 'DMSans_500Medium', fontWeight: '500', color: '#6B6B7B' },
   inspectScoreCard: { backgroundColor: '#F8F3F1', borderRadius: 16, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#F0E6E2' },

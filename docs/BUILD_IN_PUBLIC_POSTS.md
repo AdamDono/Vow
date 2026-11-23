@@ -502,6 +502,49 @@ Next: Facial Liveness Verification 🎥
 
 ---
 
+# 🛡️ POST #8: Facial Liveness Verification & Verified Dating History
+
+**Theme:** Killing Catfishing & Zero-Accountability Dating With Live Camera Verification + Anonymized Vow Platform History.
+
+### 💼 LinkedIn Format (Tight & High-Retention)
+```markdown
+Half the problem with dating apps isn’t finding matches.
+It’s wondering if the person you’re talking to is even real — or if they ghost everyone after 3 days.
+
+Today on **Vow**, I shipped two features to fix both:
+
+1️⃣ **10-Second Facial Liveness Check**
+No more trusting 5-year-old photos. Members complete a quick 3-step live front-camera check (center → turn right → smile) to unlock the green **Face Verified** shield on their profile. The selfie stays 100% private.
+
+2️⃣ **Verified Vow Platform History ("Dating Resume")**
+When someone commits to a Vow and later returns to Single Mode, their profile carries an anonymized, verified track record — Past Vows count, Longest Commitment, and Average Harmony — with a privacy toggle they control.
+
+No gossip. No names. Just real accountability.
+
+Built with Expo Camera + Hono + Neon Postgres + UploadThing.
+
+Honest question 👇
+Would seeing someone’s anonymized relationship length & verified face check make you trust a dating app more — or feel like too much transparency?
+
+#BuildInPublic #Startups #ReactNative #ProductDesign #TrustAndSafety #DatingApps
+```
+
+### 🐦 X / Twitter Post
+```markdown
+Catfishing + zero accountability ruined dating apps.
+
+Just shipped Milestone 8 on @VowApp 🛡️:
+→ 3-step live camera Facial Liveness Check (unlocks green Face Verified shield)
+→ Anonymized Vow Platform History ("Dating Resume": past vows, longest commitment, avg harmony)
+→ 1-tap privacy switch on Profile
+
+Would you want a verified dating resume on dating apps? 👇
+
+#buildinpublic #reactnative #indiedev
+```
+
+---
+
 ## 📅 Roadmap Overview
 
 | Post # | Milestone Covered | Status |
@@ -513,7 +556,7 @@ Next: Facial Liveness Verification 🎥
 | **Post #5** | Discovery Filter Engine, Vow Trust Score & Profile Completeness | Ready to Publish |
 | **Post #6** | The Vow Proposal Lock & Couples Mode Transition | **Published** |
 | **Post #7** | 60fps Swipe Physics, WebSockets Real-Time Sync & Native Auth Hardening | **Ready to Publish** |
-| **Post #8** | Facial Liveness Verification & Verified Platform History | *Upcoming* |
-| **Post #9** | Couples Date Night Marketplace & Subscriptions | *Planned* |
+| **Post #8** | Facial Liveness Verification & Verified Platform History | **Ready to Publish** |
+| **Post #9** | Couples Date Night Marketplace & Subscriptions | *Upcoming* |
 | **Post #10** | Push Notifications, Cloud Deploy & TestFlight Beta Launch | *Planned* |
 

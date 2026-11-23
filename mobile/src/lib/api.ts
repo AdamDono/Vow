@@ -95,6 +95,11 @@ export const api = {
       apiRequest<any>('/api/auth/neon-sync', { method: 'POST', body: JSON.stringify(payload || {}) }),
     updateProfile: (data: any) =>
       apiRequest<any>('/api/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
+    verifyLiveness: (payload: { selfieUrl?: string; challengesCompleted: string[] }) =>
+      apiRequest<{ success: boolean; message: string; livenessVerified: boolean; verifiedAt: string; vouchRating: number }>(
+        '/api/auth/verify-liveness',
+        { method: 'POST', body: JSON.stringify(payload) }
+      ),
     me: () => apiRequest<any>('/api/auth/me'),
   },
 

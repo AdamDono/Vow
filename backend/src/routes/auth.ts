@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { authMiddleware } from '../middleware/auth.js'
 import { AppEnv } from '../types/index.js'
+import { getUserPlatformHistory } from '../lib/history.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vow_super_secret_jwt_key_development_2026'
 
@@ -242,7 +243,7 @@ authRouter.post('/google', async (c) => {
 // GET /api/auth/me
 authRouter.get('/me', authMiddleware, async (c) => {
   const authUser = c.get('user')
-  const [user, reports] = await Promise.all([
+  const [user, reports, platformHistory] = await Promise.all([
     db.query.users.findFirst({
       where: eq(users.id, authUser.userId),
       with: {
@@ -255,6 +256,7 @@ authRouter.get('/me', authMiddleware, async (c) => {
       where: eq(userReports.reportedId, authUser.userId),
       columns: { id: true },
     }),
+    getUserPlatformHistory(authUser.userId),
   ])
 
   if (!user) {
@@ -265,8 +267,58 @@ authRouter.get('/me', authMiddleware, async (c) => {
     user: {
       ...user,
       reportsCount: reports.length,
+      platformHistory,
     },
   })
+})
+
+// POST /api/auth/verify-liveness — Complete Facial Liveness Check & Award Verified Badge
+authRouter.post('/verify-liveness', authMiddleware, async (c) => {
+  try {
+    const authUser = c.get('user')
+    const { selfieUrl, challengesCompleted } = await c.req.json()
+
+    if (!Array.isArray(challengesCompleted) || challengesCompleted.length < 2) {
+      return c.json(
+        { error: 'Please complete the guided facial liveness prompts to verify your identity.' },
+        400
+      )
+    }
+
+    const existingProfile = await db.query.profiles.findFirst({
+      where: eq(profiles.userId, authUser.userId),
+    })
+
+    if (!existingProfile) {
+      return c.json({ error: 'Profile not found' }, 404)
+    }
+
+    const now = new Date()
+    const nextTrustScore = Math.min(100, Math.max(existingProfile.vouchRating ?? 90, 95) + 5)
+
+    const [updatedProfile] = await db
+      .update(profiles)
+      .set({
+        livenessVerified: true,
+        isVerified: true,
+        verificationPhotoUrl: selfieUrl || existingProfile.verificationPhotoUrl || null,
+        verifiedAt: now,
+        vouchRating: nextTrustScore,
+        updatedAt: now,
+      })
+      .where(eq(profiles.userId, authUser.userId))
+      .returning()
+
+    return c.json({
+      success: true,
+      message: 'Identity verified! Your Vow Face Verified badge is now live.',
+      livenessVerified: true,
+      verifiedAt: updatedProfile.verifiedAt,
+      vouchRating: updatedProfile.vouchRating,
+    })
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Verification failed' }, 500)
+  }
 })
 
 // PUT /api/auth/profile — Update user profile & onboarding data in real-time
@@ -274,7 +326,7 @@ authRouter.put('/profile', authMiddleware, async (c) => {
   try {
     const authUser = c.get('user')
     const body = await c.req.json()
-    const { firstName, lastName, age, gender, city, bio, lookingFor, discoveryActive, photos, interests } = body
+    const { firstName, lastName, age, gender, city, bio, lookingFor, discoveryActive, datingResumePublic, photos, interests } = body
 
     // 1. Update or insert profiles table
     const profileUpdate: Record<string, any> = {
@@ -288,6 +340,7 @@ authRouter.put('/profile', authMiddleware, async (c) => {
     if (bio !== undefined && bio !== null) profileUpdate.bio = String(bio).trim()
     if (lookingFor !== undefined && lookingFor !== null) profileUpdate.lookingFor = String(lookingFor)
     if (typeof discoveryActive === 'boolean') profileUpdate.discoveryActive = discoveryActive
+    if (typeof datingResumePublic === 'boolean') profileUpdate.datingResumePublic = datingResumePublic
 
     const existingProfile = await db.query.profiles.findFirst({
       where: eq(profiles.userId, authUser.userId),

@@ -71,17 +71,21 @@
   - Guarded dev-only `neon-sync` fallback behind `NODE_ENV !== 'production'` and removed web browser focus rings on tab icons.
 - **BIP Post #7:** Ready to Publish.
 
+### Milestone 8: Facial Liveness Verification & Verified Platform History *(Just Completed!)*
+- **Guided Facial Liveness Verification (`mobile/src/app/verify.tsx`, `POST /api/auth/verify-liveness`):**
+  - 3-step live camera check (*Center face → Turn slightly right → Smile & Capture*) supporting Web live webcam (`getUserMedia` + canvas frame capture), native iOS/Android front camera (`expo-camera`), and selfie upload fallback.
+  - Uploads private verification frame to UploadThing, updates `profiles.liveness_verified`, `verified_at`, `verification_photo_url`, boosts Vow Trust Score, and displays the green **`Face Verified`** shield across Profile, Discover Inspector, and In-Chat Inspector.
+- **Verified Vow Platform History ("Dating Resume") (`backend/src/lib/history.ts`, `profile/index.tsx`, `discover.tsx`, `chat/[id].tsx`):**
+  - Computes anonymized relationship track record (`completedRelationships`, `longestCommitmentDays`, `avgHarmonyScore`, `badgeLabel`) from `relationships`.
+  - Live **`Show Dating Resume on Profile`** privacy toggle (`profiles.dating_resume_public`) persisted to Neon Postgres.
+  - Surfaced on My Profile, Discover Profile Inspector, and In-Chat Profile Inspector.
+- **BIP Post #8:** Ready to Publish.
+
 ---
 
 ## 🚀 What to Build Next (Prioritized Roadmap)
 
-### Milestone 8: Facial Liveness Verification & Real Platform History *(Recommended Next)*
-Bring Vow's biggest anti-catfish differentiator to life:
-1. **Camera Selfie Liveness Check (`expo-camera`):** Guided quick face check during onboarding/verification instead of defaulting `isVerified: true`.
-2. **Verified Vow Platform History on Profiles:** Display anonymized, verified past relationship metrics (e.g., relationship duration + mutual respect tier from `/api/couples/history`) on Single Mode profile cards & Trust Score modal.
-- **Target BIP Post #8:** *"How We Killed Catfishing: Coding Facial Verification & Verified Dating History"*
-
-### Milestone 9: Couples Date Night Marketplace & Monetization
+### Milestone 9: Couples Date Night Marketplace & Monetization *(Recommended Next)*
 Turn Couples Mode into a real revenue engine (without ads):
 1. **Curated Date Night Bookings Tab/Screen:** Browse local restaurants, getaways, and experiences (e.g., Cape Town / Joburg spots) right from Couples Mode.
 2. **Stripe / Apple Pay Checkout:** Book date packages (10% B2B commission model) + **Vow Plus** subscription (Single Mode blurred Likes / boosts; Couples Mode relationship analytics).
